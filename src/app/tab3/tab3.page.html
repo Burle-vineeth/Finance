@@ -2,7 +2,7 @@
   <ion-toolbar color="primary">
     <ion-title>Collections</ion-title>
   </ion-toolbar>
-  <ion-toolbar color="primary">
+  <ion-toolbar color="primary" *ngIf="userRole() === 'ADMIN'">
     <ion-segment [(ngModel)]="viewMode">
       <ion-segment-button value="collect">
         <ion-label>Log Payment</ion-label>
@@ -17,7 +17,7 @@
 <ion-content [fullscreen]="true" class="ion-padding">
 
   <!-- View Mode: Collect Payment -->
-  <div *ngIf="viewMode === 'collect'">
+  <div *ngIf="viewMode === 'collect' && userRole() === 'ADMIN'">
     <ion-card class="form-card highlight-card">
       <ion-card-header>
         <ion-card-title>Log a Repayment</ion-card-title>
@@ -57,17 +57,17 @@
   </div>
 
   <!-- View Mode: Ledger -->
-  <div *ngIf="viewMode === 'ledger'">
+  <div *ngIf="viewMode === 'ledger' || userRole() === 'AUDITOR'">
     <ion-list class="transparent-list" *ngIf="transactions.length > 0; else noTransactions">
       <ion-item-sliding *ngFor="let t of transactions">
-        <ion-item>
+        <ion-item lines="none">
           <ion-icon 
             slot="start" 
             [name]="t.type === 'REPAYMENT' || t.type === 'CAPITAL_INJECTION' ? 'arrow-down-circle' : 'arrow-up-circle'"
             [color]="t.type === 'REPAYMENT' || t.type === 'CAPITAL_INJECTION' ? 'success' : 'danger'"
           ></ion-icon>
           <ion-label>
-            <h2>{{ t.type }}</h2>
+            <h2>{{ formatType(t.type) }}</h2>
             <p *ngIf="t.client">{{ t.client?.name }}</p>
             <p class="ledger-date">{{ t.date | date:'dd MMM yy' }}</p>
           </ion-label>
@@ -82,7 +82,7 @@
           </div>
         </ion-item>
         
-        <ion-item-options side="end" *ngIf="t.type === 'REPAYMENT'">
+        <ion-item-options side="end" *ngIf="t.type === 'REPAYMENT' && userRole() === 'ADMIN'">
           <ion-item-option color="danger" (click)="confirmDeleteTransaction(t._id)">
             <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
           </ion-item-option>

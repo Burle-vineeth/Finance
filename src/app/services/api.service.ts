@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -8,6 +8,12 @@ import { Observable } from 'rxjs';
 export class ApiService {
   private http = inject(HttpClient);
   private baseUrl = 'http://localhost:5001/api';
+
+  public userRole = signal<'ADMIN' | 'AUDITOR'>('ADMIN');
+
+  toggleRole() {
+    this.userRole.set(this.userRole() === 'ADMIN' ? 'AUDITOR' : 'ADMIN');
+  }
 
   // --- Dashboard ---
   getDashboardMetrics(): Observable<any> {

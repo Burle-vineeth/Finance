@@ -28,6 +28,8 @@ export class Tab3Page implements OnInit {
   private fb = inject(FormBuilder);
   private alertController = inject(AlertController);
 
+  public userRole = this.apiService.userRole;
+
   activeLoans: any[] = [];
   transactions: any[] = [];
   
@@ -144,6 +146,13 @@ export class Tab3Page implements OnInit {
         this.displayToast('Error undoing transaction', 'danger');
       }
     });
+  }
+
+  formatType(type: string): string {
+    if (!type) return '';
+    return type
+      .replace(/_/g, ' ')
+      .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
   }
 
   displayToast(message: string, color: string = 'success') {

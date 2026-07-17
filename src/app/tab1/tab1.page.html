@@ -1,8 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar color="primary">
-    <ion-title>
-      Command Center
-    </ion-title>
+    <ion-title>Command Center</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="toggleRole()" style="font-weight: bold;">
+        Role: {{ userRole() }}
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 

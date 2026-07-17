@@ -23,8 +23,8 @@ ion-content {
   color: white;
   margin: 1rem;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
   ion-card-title {
     color: rgba(255, 255, 255, 0.8);
     font-size: 1rem;
@@ -32,7 +32,7 @@ ion-content {
     text-transform: uppercase;
     letter-spacing: 1px;
   }
-  
+
   p {
     color: rgba(255, 255, 255, 0.8);
     margin: 0;
@@ -50,8 +50,8 @@ ion-content {
 .metric-card {
   margin: 0.5rem 0;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
   ion-card-content {
     padding: 1rem;
     text-align: center;
@@ -69,11 +69,22 @@ ion-content {
 .metric-value {
   font-size: 1.4rem;
   font-weight: 700;
-  
-  &.cash { color: var(--ion-color-success); }
-  &.outstanding { color: var(--ion-color-warning); }
-  &.profit { color: var(--ion-color-primary); }
-  &.pending { color: var(--ion-color-secondary); }
+
+  &.cash {
+    color: var(--ion-color-success);
+  }
+
+  &.outstanding {
+    color: var(--ion-color-warning);
+  }
+
+  &.profit {
+    color: var(--ion-color-primary);
+  }
+
+  &.pending {
+    color: var(--ion-color-secondary);
+  }
 }
 
 .section-title {
@@ -88,14 +99,14 @@ ion-content {
   border-radius: 12px;
   background: white;
   border-left: 4px solid var(--ion-color-success);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
   .target-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: 600;
-    
+
     .target-amount {
       font-size: 1.2rem;
       color: var(--ion-color-success);
@@ -106,14 +117,15 @@ ion-content {
 .transparent-list {
   background: transparent;
   margin: 0 1rem;
-  
+
   ion-item {
     --background: white;
     --border-radius: 12px;
     margin-bottom: 0.5rem;
     --padding-start: 1rem;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-    
+    --padding-end: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+
     h2 {
       font-weight: 600;
     }

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
   IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol, IonSpinner, 
-  IonList, IonItem, IonLabel, IonIcon 
+  IonList, IonItem, IonLabel, IonIcon, IonButtons, IonButton
 } from '@ionic/angular/standalone';
 import { ApiService } from '../services/api.service';
 import { addIcons } from 'ionicons';
@@ -17,15 +17,20 @@ import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, cale
     CommonModule, 
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
     IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol, IonSpinner,
-    IonList, IonItem, IonLabel, IonIcon
+    IonList, IonItem, IonLabel, IonIcon, IonButtons, IonButton
   ],
 })
 export class Tab1Page implements OnInit {
   private apiService = inject(ApiService);
+  public userRole = this.apiService.userRole;
   
   metrics: any = null;
   isLoading = true;
   error = '';
+
+  toggleRole() {
+    this.apiService.toggleRole();
+  }
 
   constructor() {
     addIcons({

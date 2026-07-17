@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { 
@@ -27,7 +27,10 @@ export class Tab2Page implements OnInit {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
 
+  public userRole = this.apiService.userRole;
+
   viewMode: 'forms' | 'clients' | 'capital' | 'loans' = 'forms';
+
 
   clients: any[] = [];
   allLoans: any[] = [];
@@ -72,6 +75,12 @@ export class Tab2Page implements OnInit {
   toastColor = 'success';
 
   constructor() {
+    effect(() => {
+      if (this.userRole() === 'AUDITOR' && this.viewMode === 'forms') {
+        this.viewMode = 'clients';
+      }
+    });
+
     addIcons({ 
       'arrow-up-circle': arrowUpCircle, 
       'arrow-down-circle': arrowDownCircle,
@@ -214,6 +223,13 @@ export class Tab2Page implements OnInit {
 
   trackById(index: number, item: any) {
     return item?._id || item?.id || index;
+  }
+
+  formatType(type: string): string {
+    if (!type) return '';
+    return type
+      .replace(/_/g, ' ')
+      .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
   }
 
   displayToast(message: string, color: string = 'success') {
