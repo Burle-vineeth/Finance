@@ -7,7 +7,7 @@ import {
 } from '@ionic/angular/standalone';
 import { ApiService } from '../services/api.service';
 import { addIcons } from 'ionicons';
-import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline } from 'ionicons/icons';
+import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline, checkmarkCircleOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tab1',
@@ -38,7 +38,8 @@ export class Tab1Page implements OnInit {
       'trending-up-outline': trendingUpOutline,
       'wallet-outline': walletOutline,
       'alert-circle-outline': alertCircleOutline,
-      'calendar-outline': calendarOutline
+      'calendar-outline': calendarOutline,
+      'checkmark-circle-outline': checkmarkCircleOutline
     });
   }
 
@@ -63,5 +64,55 @@ export class Tab1Page implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  getDueStatus(loan: any): string {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const nextDate = new Date(loan.nextPaymentDate);
+    nextDate.setHours(0, 0, 0, 0);
+
+    if (loan.isCollectedToday) {
+      if (nextDate.getTime() === tomorrow.getTime()) {
+        return 'Collected, Next Due: Tomorrow';
+      } else {
+        const dateStr = nextDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        return `Collected, Next Due: ${dateStr}`;
+      }
+    } else {
+      if (nextDate.getTime() <= today.getTime()) {
+        return 'Pending Today';
+      } else if (nextDate.getTime() === tomorrow.getTime()) {
+        return 'Next Due: Tomorrow';
+      } else {
+        const dateStr = nextDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        return `Next Due: ${dateStr}`;
+      }
+    }
+  }
+
+  getDueStatusColor(loan: any): string {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nextDate = new Date(loan.nextPaymentDate);
+    nextDate.setHours(0, 0, 0, 0);
+
+    if (loan.isCollectedToday) return 'success';
+    if (nextDate.getTime() <= today.getTime()) return 'warning';
+    return 'tertiary';
+  }
+
+  getDueStatusIcon(loan: any): string {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nextDate = new Date(loan.nextPaymentDate);
+    nextDate.setHours(0, 0, 0, 0);
+
+    if (loan.isCollectedToday) return 'checkmark-circle-outline';
+    if (nextDate.getTime() <= today.getTime()) return 'alert-circle-outline';
+    return 'calendar-outline';
   }
 }
