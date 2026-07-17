@@ -1,0 +1,128 @@
+ion-content {
+  --background: #f4f5f8;
+}
+
+ion-header {
+  ion-segment {
+    --background: var(--ion-color-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  ion-segment-button {
+    color: rgba(255, 255, 255, 0.7);
+    --color-checked: #fff;
+    --indicator-color: #fff;
+  }
+}
+
+.inner-segment {
+  margin: 0 1rem 1rem;
+  --background: transparent;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+  ion-segment-button {
+    --color-checked: #fff;
+    --indicator-color: var(--ion-color-primary);
+    color: var(--ion-color-medium);
+    font-weight: 600;
+    font-size: 0.95rem;
+    min-height: 48px;
+  }
+}
+
+.form-card {
+  margin: 1rem 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  ion-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+}
+
+.highlight-card {
+  border-top: 4px solid var(--ion-color-success);
+}
+
+.highlight-card-blue {
+  border-top: 4px solid var(--ion-color-tertiary);
+}
+
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 0.5rem;
+
+  ion-input,
+  ion-select {
+    font-size: 1rem;
+  }
+}
+
+.btn-container {
+  margin-top: 1.5rem;
+
+  ion-button {
+    --border-radius: 8px;
+    font-weight: 600;
+    height: 48px;
+  }
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 1.5rem 1rem 0.2rem;
+  color: var(--ion-color-dark);
+}
+
+.transparent-list {
+  background: transparent;
+  margin: 1rem;
+
+  ion-item {
+    --background: white;
+    --border-radius: 12px;
+    margin-bottom: 0.8rem;
+    --padding-start: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+
+    h2 {
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      color: var(--ion-color-dark);
+    }
+
+    p {
+      margin: 0.1rem 0;
+      color: var(--ion-color-medium);
+    }
+
+    .ledger-date {
+      font-size: 0.8rem;
+      color: var(--ion-color-medium);
+    }
+  }
+}
+
+.transaction-amounts {
+  text-align: right;
+
+  .main-amount {
+    font-weight: 700;
+    font-size: 1.1rem;
+
+    &.positive {
+      color: var(--ion-color-success);
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--ion-color-medium);
+  margin-top: 2rem;
+}

@@ -1,17 +1,107 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 3
-    </ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>Collections</ion-title>
+  </ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-segment [(ngModel)]="viewMode">
+      <ion-segment-button value="collect">
+        <ion-label>Log Payment</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="ledger">
+        <ion-label>Full Ledger</ion-label>
+      </ion-segment-button>
+    </ion-segment>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 3</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="ion-padding">
 
-  <app-explore-container name="Tab 3 page"></app-explore-container>
+  <!-- View Mode: Collect Payment -->
+  <div *ngIf="viewMode === 'collect'">
+    <ion-card class="form-card highlight-card">
+      <ion-card-header>
+        <ion-card-title>Log a Repayment</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <form [formGroup]="repaymentForm" (ngSubmit)="onLogRepayment()">
+          
+          <ion-item lines="full">
+            <ion-select label="Select Active Loan" formControlName="loan" placeholder="Choose...">
+              <ion-select-option *ngFor="let loan of activeLoans" [value]="loan._id">
+                {{ loan.client?.name }} (Owes {{ loan.pendingAmount | currency:'INR':'symbol':'1.0-2' }})
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item lines="full">
+            <ion-input label="Amount Received" labelPlacement="floating" formControlName="amount" type="text" inputmode="numeric" placeholder="₹100" (ionInput)="formatCurrencyInput($event, repaymentForm, 'amount')"></ion-input>
+          </ion-item>
+
+          <ion-item lines="full">
+            <ion-input label="Date Received" labelPlacement="floating" formControlName="date" type="date"></ion-input>
+          </ion-item>
+
+          <div class="btn-container">
+            <ion-button expand="block" color="success" type="submit" [disabled]="repaymentForm.invalid || activeLoans.length === 0">
+              Log Payment
+            </ion-button>
+          </div>
+        </form>
+      </ion-card-content>
+    </ion-card>
+
+    <h2 class="section-title">Why log here?</h2>
+    <p class="helper-text">
+      When you log a payment here, the backend automatically applies a "Principal First" recovery model, ensuring 100% of the loan's initial principal amount is recovered before any excess funds are counted as Realized Profit.
+    </p>
+  </div>
+
+  <!-- View Mode: Ledger -->
+  <div *ngIf="viewMode === 'ledger'">
+    <ion-list class="transparent-list" *ngIf="transactions.length > 0; else noTransactions">
+      <ion-item-sliding *ngFor="let t of transactions">
+        <ion-item>
+          <ion-icon 
+            slot="start" 
+            [name]="t.type === 'REPAYMENT' || t.type === 'CAPITAL_INJECTION' ? 'arrow-down-circle' : 'arrow-up-circle'"
+            [color]="t.type === 'REPAYMENT' || t.type === 'CAPITAL_INJECTION' ? 'success' : 'danger'"
+          ></ion-icon>
+          <ion-label>
+            <h2>{{ t.type }}</h2>
+            <p *ngIf="t.client">{{ t.client?.name }}</p>
+            <p class="ledger-date">{{ t.date | date:'dd MMM yy' }}</p>
+          </ion-label>
+          <div slot="end" class="transaction-amounts">
+            <span class="main-amount" [class.positive]="t.type === 'REPAYMENT'">
+              {{ t.type === 'REPAYMENT' ? '+' : '-' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
+            </span>
+            <br>
+            <span class="sub-amount" *ngIf="t.type === 'REPAYMENT'">
+              (Profit: {{ t.profitPortion | currency:'INR':'symbol':'1.0-2' }})
+            </span>
+          </div>
+        </ion-item>
+        
+        <ion-item-options side="end" *ngIf="t.type === 'REPAYMENT'">
+          <ion-item-option color="danger" (click)="confirmDeleteTransaction(t._id)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+
+    <ng-template #noTransactions>
+      <p class="empty-state">No transactions in the ledger yet.</p>
+    </ng-template>
+  </div>
+
+  <!-- Toast for notifications -->
+  <ion-toast
+    [isOpen]="showToast"
+    [message]="toastMessage"
+    [duration]="2500"
+    [color]="toastColor"
+    (didDismiss)="showToast = false"
+  ></ion-toast>
+
 </ion-content>

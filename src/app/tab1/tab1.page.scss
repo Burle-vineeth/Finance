@@ -1,0 +1,127 @@
+ion-content {
+  --background: #f4f5f8;
+}
+
+.loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: var(--ion-color-medium);
+}
+
+.error-msg {
+  color: var(--ion-color-danger);
+  text-align: center;
+  margin-top: 2rem;
+  font-weight: 600;
+}
+
+.equity-card {
+  background: var(--ion-color-primary);
+  color: white;
+  margin: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  
+  ion-card-title {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  p {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.huge-amount {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  color: white;
+}
+
+.metric-card {
+  margin: 0.5rem 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  
+  ion-card-content {
+    padding: 1rem;
+    text-align: center;
+  }
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  
+  &.cash { color: var(--ion-color-success); }
+  &.outstanding { color: var(--ion-color-warning); }
+  &.profit { color: var(--ion-color-primary); }
+  &.pending { color: var(--ion-color-secondary); }
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 1.5rem 1rem 0.5rem;
+  color: var(--ion-color-dark);
+}
+
+.target-card {
+  margin: 0 1rem;
+  border-radius: 12px;
+  background: white;
+  border-left: 4px solid var(--ion-color-success);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  
+  .target-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    
+    .target-amount {
+      font-size: 1.2rem;
+      color: var(--ion-color-success);
+    }
+  }
+}
+
+.transparent-list {
+  background: transparent;
+  margin: 0 1rem;
+  
+  ion-item {
+    --background: white;
+    --border-radius: 12px;
+    margin-bottom: 0.5rem;
+    --padding-start: 1rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    
+    h2 {
+      font-weight: 600;
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--ion-color-medium);
+  margin-top: 1rem;
+}

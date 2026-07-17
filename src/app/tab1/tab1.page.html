@@ -1,17 +1,129 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-title>
-      Tab 1
+      Command Center
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 1</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="ion-padding">
 
-  <app-explore-container name="Tab 1 page"></app-explore-container>
+
+  <div *ngIf="isLoading" class="loading-center">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Loading Ledger...</p>
+  </div>
+
+  <div *ngIf="error" class="error-msg">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!isLoading && metrics">
+    <!-- Top Level Equity -->
+    <ion-card class="equity-card">
+      <ion-card-header>
+        <ion-card-title>Total Equity</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <h1 class="huge-amount">{{ metrics.finances.totalEquity | currency:'INR':'symbol':'1.0-2' }}</h1>
+        <p>Total Assets (Capital + Realized Profit)</p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- 2x2 Grid for Main Metrics -->
+    <ion-grid>
+      <ion-row>
+        <ion-col size="6">
+          <ion-card class="metric-card">
+            <ion-card-content>
+              <div class="metric-label">Cash on Hand</div>
+              <div class="metric-value cash">{{ metrics.finances.cashOnHand | currency:'INR':'symbol':'1.0-2' }}</div>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+        <ion-col size="6">
+          <ion-card class="metric-card">
+            <ion-card-content>
+              <div class="metric-label">In Market</div>
+              <div class="metric-value outstanding">{{ metrics.finances.moneyInMarket | currency:'INR':'symbol':'1.0-2' }}</div>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+      <ion-row>
+        <ion-col size="6">
+          <ion-card class="metric-card">
+            <ion-card-content>
+              <div class="metric-label">Realized Profit</div>
+              <div class="metric-value profit">{{ metrics.finances.realizedProfit | currency:'INR':'symbol':'1.0-2' }}</div>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+        <ion-col size="6">
+          <ion-card class="metric-card">
+            <ion-card-content>
+              <div class="metric-label">Pending Profit</div>
+              <div class="metric-value pending">{{ metrics.finances.expectedProfitPending | currency:'INR':'symbol':'1.0-2' }}</div>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+      <ion-row>
+        <ion-col size="12">
+          <ion-card class="metric-card" style="border: 1px solid rgba(var(--ion-color-primary-rgb), 0.2);">
+            <ion-card-content>
+              <div class="metric-label">Total Invested Capital</div>
+              <div class="metric-value" style="color: var(--ion-color-primary);">
+                {{ metrics.finances.totalCapital | currency:'INR':'symbol':'1.0-2' }}
+              </div>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Today's Action -->
+    <h2 class="section-title">Today's Target</h2>
+    <ion-card class="target-card">
+      <ion-card-content>
+        <div class="target-row" style="margin-bottom: 0.8rem;">
+          <span>Expected Daily Collections</span>
+          <span class="target-amount">{{ metrics.collections.totalExpectedDailyCollections | currency:'INR':'symbol':'1.0-2' }}</span>
+        </div>
+        <div class="target-row" style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 0.8rem;">
+          <span style="font-weight: 600;">Collected Today</span>
+          <span class="target-amount" [class.success]="metrics.collections.todayCollections >= metrics.collections.totalExpectedDailyCollections && metrics.collections.totalExpectedDailyCollections > 0" style="color: var(--ion-color-success);">
+            {{ metrics.collections.todayCollections | currency:'INR':'symbol':'1.0-2' }}
+          </span>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <h2 class="section-title">Active Loans</h2>
+    <ion-list class="transparent-list" style="margin: 0;" *ngIf="metrics.collections.activeLoans.length > 0; else noLoans">
+      <ion-card *ngFor="let loan of metrics.collections.activeLoans" style="margin: 0 0 1rem 0; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+        <ion-item lines="none" style="--background: transparent; --padding-start: 1rem; --padding-top: 0.5rem; --padding-bottom: 0.5rem;">
+          <ion-label class="ion-text-wrap">
+            <h2 style="font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; color: var(--ion-color-dark);">{{ loan.clientName }}</h2>
+            <p style="color: var(--ion-color-medium); font-size: 0.85rem; margin-bottom: 12px;">Expect: <strong style="color: var(--ion-color-dark);">{{ loan.expectedPayment | currency:'INR':'symbol':'1.0-2' }}</strong> / {{ loan.frequency | lowercase }}</p>
+            
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="font-size: 0.75rem; background: rgba(var(--ion-color-tertiary-rgb), 0.1); color: var(--ion-color-tertiary); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                <ion-icon name="calendar-outline" style="font-size: 0.9rem;"></ion-icon>
+                Next Due: {{ loan.nextPaymentDate | date:'dd MMM' }}
+              </span>
+            </div>
+          </ion-label>
+          <div slot="end" style="text-align: right;">
+             <span style="font-size: 0.7rem; color: var(--ion-color-medium); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Pending</span>
+             <span style="font-weight: 800; font-size: 1.1rem; color: var(--ion-color-primary);">{{ loan.pendingAmount | currency:'INR':'symbol':'1.0-2' }}</span>
+          </div>
+        </ion-item>
+      </ion-card>
+    </ion-list>
+    <ng-template #noLoans>
+      <p class="empty-state">No active loans in the market.</p>
+    </ng-template>
+
+  </div>
 </ion-content>
