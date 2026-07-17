@@ -16,7 +16,7 @@ ion-segment-button {
 .form-card {
   margin: 1rem 1rem 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   ion-card-title {
     font-size: 1.1rem;
@@ -33,15 +33,16 @@ ion-item {
   --padding-start: 0;
   --inner-padding-end: 0;
   margin-bottom: 0.5rem;
-  
-  ion-input, ion-select {
+
+  ion-input,
+  ion-select {
     font-size: 1rem;
   }
 }
 
 .btn-container {
   margin-top: 1.5rem;
-  
+
   ion-button {
     --border-radius: 8px;
     font-weight: 600;
@@ -66,23 +67,26 @@ ion-item {
 .transparent-list {
   background: transparent;
   margin: 1rem;
-  
+
   ion-item {
     --background: white;
     --border-radius: 12px;
     margin-bottom: 0.8rem;
     --padding-start: 1rem;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-    
+    --padding-end: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+
     h2 {
       font-weight: 700;
       font-size: 0.9rem;
       text-transform: uppercase;
       color: var(--ion-color-dark);
     }
+
     p {
       margin: 0.1rem 0;
     }
+
     .ledger-date {
       font-size: 0.8rem;
       color: var(--ion-color-medium);
@@ -92,16 +96,16 @@ ion-item {
 
 .transaction-amounts {
   text-align: right;
-  
+
   .main-amount {
     font-weight: 700;
     font-size: 1.1rem;
-    
+
     &.positive {
       color: var(--ion-color-success);
     }
   }
-  
+
   .sub-amount {
     font-size: 0.8rem;
     color: var(--ion-color-primary);

@@ -126,3 +126,167 @@ ion-item {
   color: var(--ion-color-medium);
   margin-top: 2rem;
 }
+
+/* Extracted Inline Styles */
+
+.client-container,
+.capital-container,
+.loan-container {
+  margin: 0 1rem;
+}
+
+.capital-container,
+.loan-container {
+  margin: 1rem;
+}
+
+.list-card {
+  margin: 0 0 1rem 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.list-item {
+  --background: transparent;
+  --padding-start: 1rem;
+  --padding-end: 1rem;
+  --padding-top: 0.5rem;
+  --padding-bottom: 0.5rem;
+}
+
+.avatar-icon {
+  background: rgba(var(--ion-color-primary-rgb), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-primary);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.avatar-icon.align-start {
+  align-self: flex-start;
+  margin-top: 10px;
+}
+
+.text-bold-large {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.text-medium-small {
+  color: var(--ion-color-medium);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.icon-middle {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.icon-large {
+  font-size: 2rem;
+}
+
+.text-semibold-large {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.badge-container {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.status-badge {
+  font-size: 0.65rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.frequency-badge {
+  font-size: 0.65rem;
+  color: var(--ion-color-medium);
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.amount-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  background: rgba(var(--ion-color-primary-rgb), 0.03);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.amount-label {
+  font-size: 0.7rem;
+  color: var(--ion-color-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.amount-value {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ion-color-dark);
+}
+
+.amount-value-large {
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--ion-color-primary);
+}
+
+.modal-card {
+  margin: 0 0 1.5rem 0;
+}
+
+.modal-text {
+  margin-bottom: 0.5rem;
+  color: var(--ion-color-dark);
+}
+
+.transaction-list {
+  margin: 0;
+}
+
+.transaction-item {
+  --background: white;
+  border-radius: 12px;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.client-name {
+  color: var(--ion-color-dark);
+  margin-bottom: 4px;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.status-text {
+  margin-bottom: 0.5rem;
+}
+
+.transaction-type-title {
+  font-weight: 600;
+}
+
+.transaction-date {
+  color: var(--ion-color-medium);
+}

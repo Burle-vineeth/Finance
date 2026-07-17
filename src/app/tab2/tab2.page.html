@@ -136,19 +136,16 @@
   <!-- CLIENTS SECTION -->
   <div *ngIf="viewMode === 'clients'">
     <h2 class="section-title">Client Directory</h2>
-    <div *ngIf="clients.length > 0; else noClients" style="margin: 0 1rem;">
-      <ion-card *ngFor="let c of clients"
-        style="margin: 0 0 1rem 0; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-        <ion-item lines="none"
-          style="--background: transparent; --padding-start: 1rem; --padding-top: 0.5rem; --padding-bottom: 0.5rem;">
-          <ion-avatar slot="start"
-            style="background: rgba(var(--ion-color-primary-rgb), 0.1); display: flex; align-items: center; justify-content: center; color: var(--ion-color-primary); font-weight: bold; font-size: 1.2rem;">
+    <div *ngIf="clients.length > 0; else noClients" class="client-container">
+      <ion-card *ngFor="let c of clients; trackBy: trackById" class="list-card">
+        <ion-item lines="none" class="list-item">
+          <ion-avatar slot="start" class="avatar-icon">
             {{ c.name?.charAt(0) || 'U' }}
           </ion-avatar>
           <ion-label>
-            <h2 style="font-weight: 700; font-size: 1.05rem;">{{ c.name }}</h2>
-            <p style="color: var(--ion-color-medium); font-size: 0.85rem; margin-top: 2px;">
-              <ion-icon name="call" style="vertical-align: middle; margin-right: 4px;"></ion-icon>
+            <h2 class="text-bold-large">{{ c.name }}</h2>
+            <p class="text-medium-small">
+              <ion-icon name="call" class="icon-middle"></ion-icon>
               {{ c.phone }}
             </p>
           </ion-label>
@@ -172,20 +169,17 @@
       </ion-segment-button>
     </ion-segment>
 
-    <div *ngIf="filteredCapital.length > 0; else noCapital" style="margin: 1rem;">
-      <ion-card *ngFor="let t of filteredCapital"
-        style="margin: 0 0 1rem 0; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-        <ion-item lines="none"
-          style="--background: transparent; --padding-start: 1rem; --padding-top: 0.5rem; --padding-bottom: 0.5rem;">
+    <div *ngIf="filteredCapital.length > 0; else noCapital" class="capital-container">
+      <ion-card *ngFor="let t of filteredCapital; trackBy: trackById" class="list-card">
+        <ion-item lines="none" class="list-item">
           <ion-icon slot="start" [name]="t.type === 'CAPITAL_INJECTION' ? 'arrow-down-circle' : 'arrow-up-circle'"
-            [color]="t.type === 'CAPITAL_INJECTION' ? 'success' : 'danger'" style="font-size: 2rem;"></ion-icon>
+            [color]="t.type === 'CAPITAL_INJECTION' ? 'success' : 'danger'" class="icon-large"></ion-icon>
           <ion-label>
-            <h2 style="font-weight: 600; font-size: 1.05rem;">{{ t.type === 'CAPITAL_INJECTION' ? 'Capital Injection' :
-              'Capital Withdrawal' }}</h2>
-            <p style="color: var(--ion-color-medium); font-size: 0.85rem;">{{ t.date | date:'dd MMM yyyy' }}</p>
+            <h2 class="text-semibold-large">{{ t.type === 'CAPITAL_INJECTION' ? 'Capital Injection' : 'Capital Withdrawal' }}</h2>
+            <p class="text-medium-small">{{ t.date | date:'dd MMM yyyy' }}</p>
           </ion-label>
-          <div slot="end">
-            <span style="font-weight: 700; font-size: 1.1rem;" [class.positive]="t.type === 'CAPITAL_INJECTION'">
+          <div slot="end" class="transaction-amounts">
+            <span class="main-amount" [class.positive]="t.type === 'CAPITAL_INJECTION'">
               {{ t.type === 'CAPITAL_INJECTION' ? '+' : '-' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
             </span>
           </div>
@@ -213,43 +207,34 @@
       </ion-segment-button>
     </ion-segment>
 
-    <div *ngIf="filteredLoans.length > 0; else noLoans" style="margin: 1rem;">
-      <ion-card *ngFor="let l of filteredLoans"
-        style="margin: 0 0 1rem 0; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: all 0.2s ease-in-out;">
-        <ion-item button detail="false" (click)="openLoanDetails(l)" lines="none"
-          style="--background: transparent; --padding-start: 1rem; --padding-top: 0.5rem; --padding-bottom: 0.5rem;">
-          <ion-avatar slot="start"
-            style="background: rgba(var(--ion-color-primary-rgb), 0.1); display: flex; align-items: center; justify-content: center; color: var(--ion-color-primary); font-weight: bold; font-size: 1.2rem; align-self: flex-start; margin-top: 10px;">
+    <div *ngIf="filteredLoans.length > 0; else noLoans" class="loan-container">
+      <ion-card *ngFor="let l of filteredLoans; trackBy: trackById" class="list-card">
+        <ion-item button detail="false" (click)="openLoanDetails(l)" lines="none" class="list-item">
+          <ion-avatar slot="start" class="avatar-icon align-start">
             {{ l.client?.name?.charAt(0) || 'U' }}
           </ion-avatar>
           <ion-label class="ion-text-wrap">
-            <h2 style="font-weight: 700; font-size: 1.1rem; color: var(--ion-color-dark); margin-bottom: 4px;">
+            <h2 class="text-bold-large client-name">
               {{ l.client?.name }}
             </h2>
-            <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 12px;">
+            <div class="badge-container">
               <ion-badge [color]="l.status === 'ACTIVE' ? 'primary' : (l.status === 'CLOSED' ? 'success' : 'danger')"
-                style="font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; font-weight: 700; letter-spacing: 0.5px;">
+                class="status-badge">
                 {{ l.status }}
               </ion-badge>
-              <span
-                style="font-size: 0.65rem; color: var(--ion-color-medium); background: rgba(0,0,0,0.04); padding: 4px 8px; border-radius: 6px; font-weight: 600; letter-spacing: 0.5px;">
+              <span class="frequency-badge">
                 {{ l.paymentFrequency }}
               </span>
             </div>
 
-            <div
-              style="display: flex; justify-content: space-between; align-items: flex-end; background: rgba(var(--ion-color-primary-rgb), 0.03); padding: 10px; border-radius: 8px;">
+            <div class="amount-container">
               <div>
-                <span
-                  style="font-size: 0.7rem; color: var(--ion-color-medium); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Disbursed</span>
-                <span style="font-weight: 600; font-size: 0.95rem; color: var(--ion-color-dark);">{{ l.principalAmount |
-                  currency:'INR':'symbol':'1.0-2' }}</span>
+                <span class="amount-label">Disbursed</span>
+                <span class="amount-value">{{ l.principalAmount | currency:'INR':'symbol':'1.0-2' }}</span>
               </div>
-              <div style="text-align: right;">
-                <span
-                  style="font-size: 0.7rem; color: var(--ion-color-medium); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Pending</span>
-                <span style="font-weight: 800; font-size: 1.1rem; color: var(--ion-color-primary);">{{ l.pendingAmount |
-                  currency:'INR':'symbol':'1.0-2' }}</span>
+              <div class="text-right">
+                <span class="amount-label">Pending</span>
+                <span class="amount-value-large">{{ l.pendingAmount | currency:'INR':'symbol':'1.0-2' }}</span>
               </div>
             </div>
           </ion-label>
@@ -280,39 +265,33 @@
       </ion-header>
       <ion-content class="ion-padding" *ngIf="selectedLoan">
         <!-- Details about the loan -->
-        <ion-card class="form-card highlight-card" style="margin: 0 0 1.5rem 0;">
+        <ion-card class="form-card highlight-card modal-card">
           <ion-card-header>
             <ion-card-title>{{ selectedLoan.client?.name }}</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <p style="margin-bottom: 0.5rem;"><strong>Status:</strong> <ion-badge
+            <p class="status-text"><strong>Status:</strong> <ion-badge
                 [color]="selectedLoan.status === 'ACTIVE' ? 'primary' : (selectedLoan.status === 'CLOSED' ? 'success' : 'danger')">{{
                 selectedLoan.status }}</ion-badge></p>
-            <p style="margin-bottom: 0.5rem; color: var(--ion-color-dark);"><strong>Disbursed:</strong> {{
-              selectedLoan.principalAmount | currency:'INR':'symbol':'1.0-2' }}</p>
-            <p style="margin-bottom: 0.5rem; color: var(--ion-color-dark);"><strong>Owes:</strong> {{
-              selectedLoan.pendingAmount | currency:'INR':'symbol':'1.0-2' }} ({{ selectedLoan.paymentFrequency }})</p>
-            <p style="margin-bottom: 0.5rem; color: var(--ion-color-dark);"><strong>Total Repaid:</strong> {{
-              selectedLoan.totalRepaid | currency:'INR':'symbol':'1.0-2' }}</p>
-            <p style="color: var(--ion-color-dark);"><strong>Date:</strong> {{ selectedLoan.startDate | date:'dd MMM yy'
-              }}</p>
+            <p class="modal-text"><strong>Disbursed:</strong> {{ selectedLoan.principalAmount | currency:'INR':'symbol':'1.0-2' }}</p>
+            <p class="modal-text"><strong>Owes:</strong> {{ selectedLoan.pendingAmount | currency:'INR':'symbol':'1.0-2' }} ({{ selectedLoan.paymentFrequency }})</p>
+            <p class="modal-text"><strong>Total Repaid:</strong> {{ selectedLoan.totalRepaid | currency:'INR':'symbol':'1.0-2' }}</p>
+            <p class="modal-text"><strong>Date:</strong> {{ selectedLoan.startDate | date:'dd MMM yy' }}</p>
           </ion-card-content>
         </ion-card>
 
         <h2 class="section-title">Transaction History</h2>
-        <ion-list class="transparent-list" style="margin: 0;"
+        <ion-list class="transparent-list transaction-list"
           *ngIf="getLoanTransactions(selectedLoan?._id).length > 0; else noTxsModal">
-          <ion-item *ngFor="let t of getLoanTransactions(selectedLoan?._id)"
-            style="--background: white; border-radius: 12px; margin-bottom: 0.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+          <ion-item *ngFor="let t of getLoanTransactions(selectedLoan?._id); trackBy: trackById" class="transaction-item">
             <ion-icon slot="start" [name]="t.type === 'REPAYMENT' ? 'arrow-down-circle' : 'arrow-up-circle'"
               [color]="t.type === 'REPAYMENT' ? 'success' : 'danger'"></ion-icon>
             <ion-label>
-              <h2 style="font-weight: 600;">{{ t.type }}</h2>
-              <p style="color: var(--ion-color-medium);">{{ t.date | date:'dd MMM yy' }}</p>
+              <h2 class="transaction-type-title">{{ t.type }}</h2>
+              <p class="transaction-date">{{ t.date | date:'dd MMM yy' }}</p>
             </ion-label>
             <div slot="end" class="transaction-amounts">
-              <span class="main-amount" style="font-weight: 700; font-size: 1.1rem;"
-                [class.positive]="t.type === 'REPAYMENT'">
+              <span class="main-amount" [class.positive]="t.type === 'REPAYMENT'">
                 {{ t.type === 'REPAYMENT' ? '+' : '-' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
               </span>
             </div>

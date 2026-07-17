@@ -212,6 +212,10 @@ export class Tab2Page implements OnInit {
     }
   }
 
+  trackById(index: number, item: any) {
+    return item?._id || item?.id || index;
+  }
+
   displayToast(message: string, color: string = 'success') {
     this.toastMessage = message;
     this.toastColor = color;
