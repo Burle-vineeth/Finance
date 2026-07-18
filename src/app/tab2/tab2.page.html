@@ -1,17 +1,313 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 2
-    </ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>Origination</ion-title>
+  </ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-segment [(ngModel)]="viewMode">
+      <ion-segment-button value="forms" *ngIf="userRole() === 'ADMIN'">
+        <ion-label>Forms</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="clients">
+        <ion-label>Clients</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="capital">
+        <ion-label>Capital</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="loans">
+        <ion-label>Loans</ion-label>
+      </ion-segment-button>
+    </ion-segment>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="ion-padding">
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+  <!-- FORMS SECTION -->
+  <div *ngIf="viewMode === 'forms' && userRole() === 'ADMIN'">
+    <!-- Step 0: Manage Capital -->
+    <ion-card class="form-card highlight-card-blue">
+      <ion-card-header>
+        <ion-card-title>Manage Capital</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <form [formGroup]="capitalForm" (ngSubmit)="onManageCapital()">
+          <ion-item lines="full">
+            <ion-select label="Transaction Type" formControlName="type">
+              <ion-select-option value="CAPITAL_INJECTION">Inject Capital (Add Money)</ion-select-option>
+              <ion-select-option value="CAPITAL_WITHDRAWAL">Withdraw Capital</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Amount" labelPlacement="floating" formControlName="amount" type="text" inputmode="numeric"
+              placeholder="₹5,000" (ionInput)="formatCurrencyInput($event, capitalForm, 'amount')"></ion-input>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Transaction Date" labelPlacement="floating" formControlName="date"
+              type="date"></ion-input>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Notes (Optional)" labelPlacement="floating" formControlName="notes"
+              placeholder="Initial Investment"></ion-input>
+          </ion-item>
+          <div class="btn-container">
+            <ion-button expand="block" color="tertiary" type="submit" [disabled]="capitalForm.invalid">Record
+              Capital</ion-button>
+          </div>
+        </form>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Step 1: Add Client -->
+    <ion-card class="form-card">
+      <ion-card-header>
+        <ion-card-title>1. Add New Client</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <form [formGroup]="clientForm" (ngSubmit)="onCreateClient()">
+          <ion-item lines="full">
+            <ion-input label="Full Name" labelPlacement="floating" formControlName="name"
+              placeholder="John Doe"></ion-input>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Phone Number" labelPlacement="floating" formControlName="phone" type="tel"
+              placeholder="555-0199"></ion-input>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Address" labelPlacement="floating" formControlName="address"
+              placeholder="123 Main St"></ion-input>
+          </ion-item>
+          <div class="btn-container">
+            <ion-button expand="block" type="submit" [disabled]="clientForm.invalid">Create Client</ion-button>
+          </div>
+        </form>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Step 2: Disburse Loan -->
+    <ion-card class="form-card highlight-card">
+      <ion-card-header>
+        <ion-card-title>2. Disburse Loan</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <form [formGroup]="loanForm" (ngSubmit)="onDisburseLoan()">
+          <ion-item lines="full">
+            <ion-select label="Select Client" formControlName="client" placeholder="Choose...">
+              <ion-select-option *ngFor="let client of clients" [value]="client._id">
+                {{ client.name }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Principal (Disbursed)" labelPlacement="floating" formControlName="principalAmount"
+              type="text" inputmode="numeric" placeholder="₹10,000"
+              (ionInput)="formatCurrencyInput($event, loanForm, 'principalAmount')"></ion-input>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Expected Return (Total)" labelPlacement="floating" formControlName="expectedReturnAmount"
+              type="text" inputmode="numeric" placeholder="₹12,000"
+              (ionInput)="formatCurrencyInput($event, loanForm, 'expectedReturnAmount')"></ion-input>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-select label="Frequency" formControlName="paymentFrequency">
+              <ion-select-option value="DAILY">Daily</ion-select-option>
+              <ion-select-option value="WEEKLY">Weekly</ion-select-option>
+              <ion-select-option value="MONTHLY">Monthly</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Duration (Days)" labelPlacement="floating" formControlName="durationDays" type="number"
+              placeholder="30"></ion-input>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Disbursement Date" labelPlacement="floating" formControlName="startDate"
+              type="date"></ion-input>
+          </ion-item>
+          <div class="btn-container">
+            <ion-button expand="block" color="success" type="submit"
+              [disabled]="loanForm.invalid || clients.length === 0">
+              Authorize Disbursement
+            </ion-button>
+          </div>
+        </form>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- CLIENTS SECTION -->
+  <div *ngIf="viewMode === 'clients'">
+    <h2 class="section-title">Client Directory</h2>
+    <div *ngIf="clients.length > 0; else noClients" class="client-container">
+      <ion-card *ngFor="let c of clients; trackBy: trackById" class="list-card">
+        <ion-item lines="none" class="list-item">
+          <ion-avatar slot="start" class="avatar-icon">
+            {{ c.name?.charAt(0) || 'U' }}
+          </ion-avatar>
+          <ion-label>
+            <h2 class="text-bold-large">{{ c.name }}</h2>
+            <p class="text-medium-small">
+              <ion-icon name="call" class="icon-middle"></ion-icon>
+              {{ c.phone }}
+            </p>
+          </ion-label>
+        </ion-item>
+      </ion-card>
+    </div>
+    <ng-template #noClients>
+      <app-empty-state icon="document-text-outline" title="No Clients Yet"
+        message="Add a client using the form."></app-empty-state>
+    </ng-template>
+  </div>
+
+  <!-- CAPITAL SECTION -->
+  <div *ngIf="viewMode === 'capital'">
+    <ion-segment [(ngModel)]="capitalFilter" class="inner-segment" mode="ios">
+      <ion-segment-button value="CAPITAL_INJECTION">
+        <ion-label>Injections</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="CAPITAL_WITHDRAWAL">
+        <ion-label>Withdrawals</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <div *ngIf="filteredCapital.length > 0; else noCapital" class="capital-container">
+      <ion-card *ngFor="let t of filteredCapital; trackBy: trackById" class="list-card">
+        <ion-item lines="none" class="list-item">
+          <ion-icon slot="start" [name]="t.type === 'CAPITAL_INJECTION' ? 'arrow-down-circle' : 'arrow-up-circle'"
+            [color]="t.type === 'CAPITAL_INJECTION' ? 'success' : 'danger'" class="icon-large"></ion-icon>
+          <ion-label>
+            <h2 class="text-semibold-large">{{ t.type === 'CAPITAL_INJECTION' ? 'Capital Injection' : 'Capital Withdrawal' }}</h2>
+            <p class="text-medium-small">{{ t.date | date:'dd MMM yyyy' }}</p>
+          </ion-label>
+          <div slot="end" class="transaction-amounts">
+            <span class="main-amount" [class.positive]="t.type === 'CAPITAL_INJECTION'">
+              {{ t.type === 'CAPITAL_INJECTION' ? '+' : '-' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
+            </span>
+          </div>
+        </ion-item>
+      </ion-card>
+    </div>
+
+    <ng-template #noCapital>
+      <app-empty-state icon="wallet-outline" title="Ledger Empty"
+        message="No capital transactions of this type."></app-empty-state>
+    </ng-template>
+  </div>
+
+  <!-- LOANS SECTION -->
+  <div *ngIf="viewMode === 'loans'">
+    <ion-segment [(ngModel)]="loanFilter" class="inner-segment" mode="ios">
+      <ion-segment-button value="ACTIVE">
+        <ion-label>Active</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="CLOSED">
+        <ion-label>Closed</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="DEFAULTED">
+        <ion-label>Defaulted</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <div *ngIf="filteredLoans.length > 0; else noLoans" class="loan-container">
+      <ion-card *ngFor="let l of filteredLoans; trackBy: trackById" class="list-card">
+        <ion-item button detail="false" (click)="openLoanDetails(l)" lines="none" class="list-item">
+          <ion-avatar slot="start" class="avatar-icon align-start">
+            {{ l.client?.name?.charAt(0) || 'U' }}
+          </ion-avatar>
+          <ion-label class="ion-text-wrap">
+            <h2 class="text-bold-large client-name">
+              {{ l.client?.name }}
+            </h2>
+            <div class="badge-container">
+              <ion-badge [color]="l.status === 'ACTIVE' ? 'primary' : (l.status === 'CLOSED' ? 'success' : 'danger')"
+                class="status-badge">
+                {{ l.status }}
+              </ion-badge>
+              <span class="frequency-badge">
+                {{ l.paymentFrequency }}
+              </span>
+            </div>
+
+            <div class="amount-container">
+              <div>
+                <span class="amount-label">Disbursed</span>
+                <span class="amount-value">{{ l.principalAmount | currency:'INR':'symbol':'1.0-2' }}</span>
+              </div>
+              <div style="text-align: center;">
+                <span class="amount-label">Expected</span>
+                <span class="amount-value" style="color: var(--ion-color-tertiary);">{{ l.expectedReturnAmount | currency:'INR':'symbol':'1.0-2' }}</span>
+              </div>
+              <div class="text-right">
+                <span class="amount-label">Pending</span>
+                <span class="amount-value-large">{{ l.pendingAmount | currency:'INR':'symbol':'1.0-2' }}</span>
+              </div>
+            </div>
+          </ion-label>
+        </ion-item>
+      </ion-card>
+    </div>
+
+    <ng-template #noLoans>
+      <app-empty-state icon="cash-outline" title="No Loans" message="No loans match this filter."></app-empty-state>
+    </ng-template>
+  </div>
+
+  <!-- Toast for notifications -->
+  <ion-toast [isOpen]="showToast" [message]="toastMessage" [duration]="2500" [color]="toastColor"
+    (didDismiss)="showToast = false"></ion-toast>
+
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeLoanDetails()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="primary">
+          <ion-buttons slot="start">
+            <ion-button (click)="closeLoanDetails()">
+              <ion-icon name="arrow-back"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>Loan Details</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding" *ngIf="selectedLoan">
+        <!-- Details about the loan -->
+        <ion-card class="form-card highlight-card modal-card">
+          <ion-card-header>
+            <ion-card-title>{{ selectedLoan.client?.name }}</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <p class="status-text"><strong>Status:</strong> <ion-badge
+                [color]="selectedLoan.status === 'ACTIVE' ? 'primary' : (selectedLoan.status === 'CLOSED' ? 'success' : 'danger')">{{
+                selectedLoan.status }}</ion-badge></p>
+            <p class="modal-text"><strong>Disbursed:</strong> {{ selectedLoan.principalAmount | currency:'INR':'symbol':'1.0-2' }}</p>
+            <p class="modal-text"><strong>Expected Return:</strong> {{ selectedLoan.expectedReturnAmount | currency:'INR':'symbol':'1.0-2' }}</p>
+            <p class="modal-text"><strong>Owes:</strong> {{ selectedLoan.pendingAmount | currency:'INR':'symbol':'1.0-2' }} ({{ selectedLoan.paymentFrequency }})</p>
+            <p class="modal-text"><strong>Total Repaid:</strong> {{ selectedLoan.totalRepaid | currency:'INR':'symbol':'1.0-2' }}</p>
+            <p class="modal-text"><strong>Date:</strong> {{ selectedLoan.startDate | date:'dd MMM yy' }}</p>
+          </ion-card-content>
+        </ion-card>
+
+        <h2 class="section-title">Transaction History</h2>
+        <ion-list class="transparent-list transaction-list"
+          *ngIf="getLoanTransactions(selectedLoan?._id).length > 0; else noTxsModal">
+          <ion-item *ngFor="let t of getLoanTransactions(selectedLoan?._id); trackBy: trackById" class="transaction-item">
+            <ion-icon slot="start" [name]="t.type === 'REPAYMENT' ? 'arrow-down-circle' : 'arrow-up-circle'"
+              [color]="t.type === 'REPAYMENT' ? 'success' : 'danger'"></ion-icon>
+            <ion-label>
+              <h2 class="transaction-type-title">{{ formatType(t.type) }}</h2>
+              <p class="transaction-date">{{ t.date | date:'dd MMM yy' }}</p>
+            </ion-label>
+            <div slot="end" class="transaction-amounts">
+              <span class="main-amount" [class.positive]="t.type === 'REPAYMENT'">
+                {{ t.type === 'REPAYMENT' ? '+' : '-' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
+              </span>
+            </div>
+          </ion-item>
+        </ion-list>
+        <ng-template #noTxsModal>
+          <app-empty-state icon="document-text-outline" title="No History"
+            message="No transactions found for this loan."></app-empty-state>
+        </ng-template>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
 </ion-content>
