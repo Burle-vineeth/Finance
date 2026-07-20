@@ -1,5 +1,7 @@
-ion-content {
-  --background: #f4f5f8;
+@media (prefers-color-scheme: light) {
+  ion-content {
+    --background: #f4f5f8;
+  }
 }
 
 .loading-center {
@@ -97,7 +99,7 @@ ion-content {
 .target-card {
   margin: 0 1rem;
   border-radius: 12px;
-  background: white;
+  background: var(--ion-card-background, #ffffff);
   border-left: 4px solid var(--ion-color-success);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
@@ -119,7 +121,7 @@ ion-content {
   margin: 0 1rem;
 
   ion-item {
-    --background: white;
+    --background: var(--ion-item-background, #ffffff);
     --border-radius: 12px;
     margin-bottom: 0.5rem;
     --padding-start: 1rem;

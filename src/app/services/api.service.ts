@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -11,6 +12,7 @@ export class ApiService {
   private baseUrl = `${environment.apiUrl}/api`;
 
   public userRole = signal<'ADMIN' | 'AUDITOR'>('ADMIN');
+  public refresh$ = new Subject<void>();
 
   toggleRole() {
     this.userRole.set(this.userRole() === 'ADMIN' ? 'AUDITOR' : 'ADMIN');
@@ -27,7 +29,9 @@ export class ApiService {
   }
 
   addClient(clientData: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/clients`, clientData);
+    return this.http.post(`${this.baseUrl}/clients`, clientData).pipe(
+      tap(() => this.refresh$.next())
+    );
   }
 
   // --- Loans ---
@@ -36,7 +40,9 @@ export class ApiService {
   }
 
   addLoan(loanData: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/loans`, loanData);
+    return this.http.post(`${this.baseUrl}/loans`, loanData).pipe(
+      tap(() => this.refresh$.next())
+    );
   }
 
   // --- Transactions ---
@@ -45,10 +51,14 @@ export class ApiService {
   }
 
   addTransaction(transactionData: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/transactions`, transactionData);
+    return this.http.post(`${this.baseUrl}/transactions`, transactionData).pipe(
+      tap(() => this.refresh$.next())
+    );
   }
 
   deleteTransaction(id: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/transactions/${id}`);
+    return this.http.delete(`${this.baseUrl}/transactions/${id}`).pipe(
+      tap(() => this.refresh$.next())
+    );
   }
 }

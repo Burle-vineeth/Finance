@@ -27,7 +27,7 @@
     <!-- Step 0: Manage Capital -->
     <ion-card class="form-card highlight-card-blue">
       <ion-card-header>
-        <ion-card-title>Manage Capital</ion-card-title>
+        <ion-card-title>Manage Capital & Expenses</ion-card-title>
       </ion-card-header>
       <ion-card-content>
         <form [formGroup]="capitalForm" (ngSubmit)="onManageCapital()">
@@ -35,6 +35,7 @@
             <ion-select label="Transaction Type" formControlName="type">
               <ion-select-option value="CAPITAL_INJECTION">Inject Capital (Add Money)</ion-select-option>
               <ion-select-option value="CAPITAL_WITHDRAWAL">Withdraw Capital</ion-select-option>
+              <ion-select-option value="BUSINESS_EXPENSE">Business Expense</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item lines="full">
@@ -167,6 +168,9 @@
       <ion-segment-button value="CAPITAL_WITHDRAWAL">
         <ion-label>Withdrawals</ion-label>
       </ion-segment-button>
+      <ion-segment-button value="BUSINESS_EXPENSE">
+        <ion-label>Expenses</ion-label>
+      </ion-segment-button>
     </ion-segment>
 
     <div *ngIf="filteredCapital.length > 0; else noCapital" class="capital-container">
@@ -175,8 +179,9 @@
           <ion-icon slot="start" [name]="t.type === 'CAPITAL_INJECTION' ? 'arrow-down-circle' : 'arrow-up-circle'"
             [color]="t.type === 'CAPITAL_INJECTION' ? 'success' : 'danger'" class="icon-large"></ion-icon>
           <ion-label>
-            <h2 class="text-semibold-large">{{ t.type === 'CAPITAL_INJECTION' ? 'Capital Injection' : 'Capital Withdrawal' }}</h2>
+            <h2 class="text-semibold-large">{{ t.type === 'CAPITAL_INJECTION' ? 'Capital Injection' : (t.type === 'CAPITAL_WITHDRAWAL' ? 'Capital Withdrawal' : 'Business Expense') }}</h2>
             <p class="text-medium-small">{{ t.date | date:'dd MMM yyyy' }}</p>
+            <p class="text-medium-small" *ngIf="t.notes">{{ t.notes }}</p>
           </ion-label>
           <div slot="end" class="transaction-amounts">
             <span class="main-amount" [class.positive]="t.type === 'CAPITAL_INJECTION'">

@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
@@ -22,6 +23,7 @@ import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, cale
 })
 export class Tab1Page implements OnInit {
   private apiService = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
   public userRole = this.apiService.userRole;
   
   metrics: any = null;
@@ -45,6 +47,11 @@ export class Tab1Page implements OnInit {
 
   ngOnInit() {
     this.loadDashboard();
+    this.apiService.refresh$.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadDashboard();
+    });
   }
 
   ionViewWillEnter() {

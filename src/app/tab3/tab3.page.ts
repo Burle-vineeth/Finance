@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { 
@@ -27,6 +28,7 @@ export class Tab3Page implements OnInit {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
   private alertController = inject(AlertController);
+  private destroyRef = inject(DestroyRef);
 
   public userRole = this.apiService.userRole;
 
@@ -51,6 +53,11 @@ export class Tab3Page implements OnInit {
 
   ngOnInit() {
     this.loadData();
+    this.apiService.refresh$.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadData();
+    });
   }
 
   ionViewWillEnter() {
@@ -100,7 +107,6 @@ export class Tab3Page implements OnInit {
         this.repaymentForm.reset({
           date: new Date().toISOString().substring(0, 10)
         });
-        this.loadData(); // Refresh both lists
       },
       error: (err) => {
         this.displayToast('Error logging repayment', 'danger');
@@ -140,7 +146,6 @@ export class Tab3Page implements OnInit {
     this.apiService.deleteTransaction(id).subscribe({
       next: () => {
         this.displayToast('Transaction successfully undone.');
-        this.loadData();
       },
       error: (err) => {
         this.displayToast('Error undoing transaction', 'danger');
