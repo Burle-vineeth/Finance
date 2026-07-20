@@ -1,5 +1,7 @@
-ion-content {
-  --background: #f4f5f8;
+@media (prefers-color-scheme: light) {
+  ion-content {
+    --background: #f4f5f8;
+  }
 }
 
 ion-segment {
@@ -77,7 +79,7 @@ ion-item {
   }
 
   ion-item {
-    --background: white;
+    --background: var(--ion-item-background, #ffffff);
     --padding-start: 1rem;
     --padding-end: 1rem;
 

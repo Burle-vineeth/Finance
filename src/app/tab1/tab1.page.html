@@ -45,7 +45,9 @@
             <ion-card class="metric-card">
               <ion-card-content>
                 <div class="metric-label">Cash on Hand</div>
-                <div class="metric-value cash">{{ metrics.finances.cashOnHand | currency:'INR':'symbol':'1.0-2' }}</div>
+                <div class="metric-value" [style.color]="metrics.finances.cashOnHand >= 0 ? 'var(--ion-color-success)' : 'var(--ion-color-danger)'">
+                  {{ metrics.finances.cashOnHand | currency:'INR':'symbol':'1.0-2' }}
+                </div>
                 @if (metrics.finances.totalEquity > 0) {
                   <div style="font-size: 0.75rem; color: var(--ion-color-success); opacity: 0.8; margin-top: 4px; font-weight: 700;">
                     {{ (metrics.finances.cashOnHand / metrics.finances.totalEquity) | percent:'1.0-1' }} of Equity
@@ -82,6 +84,28 @@
               <ion-card-content>
                 <div class="metric-label">Pending Profit</div>
                 <div class="metric-value pending">{{ metrics.finances.expectedProfitPending | currency:'INR':'symbol':'1.0-2' }}</div>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="6">
+            <ion-card class="metric-card">
+              <ion-card-content>
+                <div class="metric-label">Total Expenses</div>
+                <div class="metric-value" style="color: var(--ion-color-danger);">
+                  {{ metrics.finances.totalExpenses | currency:'INR':'symbol':'1.0-2' }}
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+          <ion-col size="6">
+            <ion-card class="metric-card">
+              <ion-card-content>
+                <div class="metric-label">Net Profit</div>
+                <div class="metric-value" [style.color]="metrics.finances.netProfit >= 0 ? 'var(--ion-color-success)' : 'var(--ion-color-danger)'">
+                  {{ metrics.finances.netProfit | currency:'INR':'symbol':'1.0-2' }}
+                </div>
               </ion-card-content>
             </ion-card>
           </ion-col>

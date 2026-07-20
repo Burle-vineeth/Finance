@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, effect } from '@angular/core';
+import { Component, OnInit, inject, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { 
@@ -26,6 +27,7 @@ import { EmptyStateComponent } from '../components/empty-state/empty-state.compo
 export class Tab2Page implements OnInit {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
+  private destroyRef = inject(DestroyRef);
 
   public userRole = this.apiService.userRole;
 
@@ -37,7 +39,7 @@ export class Tab2Page implements OnInit {
   capitalTransactions: any[] = [];
   loanTransactionsMap: { [key: string]: any[] } = {};
   
-  capitalFilter: 'CAPITAL_INJECTION' | 'CAPITAL_WITHDRAWAL' = 'CAPITAL_INJECTION';
+  capitalFilter: 'CAPITAL_INJECTION' | 'CAPITAL_WITHDRAWAL' | 'BUSINESS_EXPENSE' = 'CAPITAL_INJECTION';
   loanFilter: 'ACTIVE' | 'CLOSED' | 'DEFAULTED' = 'ACTIVE';
   
   get filteredCapital() {
@@ -117,6 +119,11 @@ export class Tab2Page implements OnInit {
 
   ngOnInit() {
     this.loadAllData();
+    this.apiService.refresh$.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadAllData();
+    });
   }
 
   ionViewWillEnter() {
@@ -137,7 +144,7 @@ export class Tab2Page implements OnInit {
     this.apiService.getTransactions().subscribe({
       next: (res) => {
         this.capitalTransactions = res.data.filter((t: any) => 
-          t.type === 'CAPITAL_INJECTION' || t.type === 'CAPITAL_WITHDRAWAL'
+          t.type === 'CAPITAL_INJECTION' || t.type === 'CAPITAL_WITHDRAWAL' || t.type === 'BUSINESS_EXPENSE'
         );
         
         this.loanTransactionsMap = {};
@@ -163,7 +170,7 @@ export class Tab2Page implements OnInit {
 
     this.apiService.addTransaction(payload).subscribe({
       next: (res) => {
-        this.displayToast('Capital transaction logged!');
+        this.displayToast('Transaction logged!');
         this.capitalForm.reset({ 
           type: 'CAPITAL_INJECTION',
           date: new Date().toISOString().substring(0, 10)
@@ -182,7 +189,6 @@ export class Tab2Page implements OnInit {
       next: (res) => {
         this.displayToast('Client created successfully!');
         this.clientForm.reset();
-        this.loadAllData(); // refresh list
       },
       error: (err) => {
         this.displayToast('Error creating client', 'danger');

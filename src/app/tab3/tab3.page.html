@@ -82,7 +82,7 @@
           </div>
         </ion-item>
         
-        <ion-item-options side="end" *ngIf="t.type === 'REPAYMENT' && userRole() === 'ADMIN'">
+        <ion-item-options side="end" *ngIf="(t.type === 'REPAYMENT' || t.type === 'BUSINESS_EXPENSE') && userRole() === 'ADMIN'">
           <ion-item-option color="danger" (click)="confirmDeleteTransaction(t._id)">
             <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
           </ion-item-option>
