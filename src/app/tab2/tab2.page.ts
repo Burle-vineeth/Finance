@@ -63,6 +63,11 @@ export class Tab2Page implements OnInit {
     this.selectedLoan = null;
   }
 
+  getCollectionPercentage(loan: any): number {
+    if (!loan || !loan.expectedReturnAmount) return 0;
+    return (loan.totalRepaid || 0) / loan.expectedReturnAmount;
+  }
+
   getLoanTransactions(loanId: string | undefined): any[] {
     if (!loanId) return [];
     return this.loanTransactionsMap[loanId] || [];

@@ -220,7 +220,7 @@
           </ion-avatar>
           <ion-label class="ion-text-wrap">
             <h2 class="text-bold-large client-name">
-              {{ l.client?.name }}
+              {{ l.client?.name }} <span style="font-size: 0.85rem; font-weight: normal; color: var(--ion-color-medium);">({{ getCollectionPercentage(l) | percent:'1.0-0' }})</span>
             </h2>
             <div class="badge-container">
               <ion-badge [color]="l.status === 'ACTIVE' ? 'primary' : (l.status === 'CLOSED' ? 'success' : 'danger')"
@@ -232,18 +232,22 @@
               </span>
             </div>
 
-            <div class="amount-container">
-              <div>
+            <div class="amount-container" style="flex-wrap: wrap; row-gap: 8px;">
+              <div style="width: 48%;">
                 <span class="amount-label">Disbursed</span>
-                <span class="amount-value">{{ l.principalAmount | currency:'INR':'symbol':'1.0-2' }}</span>
+                <span class="amount-value">{{ l.principalAmount | currency:'INR':'symbol':'1.0-0' }}</span>
               </div>
-              <div style="text-align: center;">
+              <div style="width: 48%; text-align: right;">
                 <span class="amount-label">Expected</span>
-                <span class="amount-value" style="color: var(--ion-color-tertiary);">{{ l.expectedReturnAmount | currency:'INR':'symbol':'1.0-2' }}</span>
+                <span class="amount-value" style="color: var(--ion-color-tertiary);">{{ l.expectedReturnAmount | currency:'INR':'symbol':'1.0-0' }}</span>
               </div>
-              <div class="text-right">
+              <div style="width: 48%;">
+                <span class="amount-label">Collected</span>
+                <span class="amount-value" style="color: var(--ion-color-success);">{{ l.totalRepaid | currency:'INR':'symbol':'1.0-0' }}</span>
+              </div>
+              <div style="width: 48%; text-align: right;">
                 <span class="amount-label">Pending</span>
-                <span class="amount-value-large">{{ l.pendingAmount | currency:'INR':'symbol':'1.0-2' }}</span>
+                <span class="amount-value-large">{{ l.pendingAmount | currency:'INR':'symbol':'1.0-0' }}</span>
               </div>
             </div>
           </ion-label>
