@@ -112,6 +112,7 @@ export class Tab2Page implements OnInit {
       paymentFrequency: ['DAILY', Validators.required],
       durationDays: ['', [Validators.required, Validators.min(1)]],
       startDate: [new Date().toISOString().substring(0, 10), Validators.required],
+      collectionStartDate: [''],
     });
 
     this.capitalForm = this.fb.group({
@@ -213,11 +214,16 @@ export class Tab2Page implements OnInit {
         this.displayToast('Loan disbursed successfully!');
         this.loanForm.reset({ 
           paymentFrequency: 'DAILY',
-          startDate: new Date().toISOString().substring(0, 10)
+          startDate: new Date().toISOString().substring(0, 10),
+          collectionStartDate: ''
         });
       },
       error: (err) => {
-        this.displayToast('Error disbursing loan', 'danger');
+        let msg = 'Error disbursing loan';
+        if (err.error?.error) {
+          msg = Array.isArray(err.error.error) ? err.error.error[0] : err.error.error;
+        }
+        this.displayToast(msg, 'danger');
       }
     });
   }

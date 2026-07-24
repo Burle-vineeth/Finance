@@ -123,6 +123,10 @@
             <ion-input label="Disbursement Date" labelPlacement="floating" formControlName="startDate"
               type="date"></ion-input>
           </ion-item>
+          <ion-item lines="full">
+            <ion-input label="Collection Start Date (Optional)" labelPlacement="floating" formControlName="collectionStartDate"
+              type="date"></ion-input>
+          </ion-item>
           <div class="btn-container">
             <ion-button expand="block" color="success" type="submit"
               [disabled]="loanForm.invalid || clients.length === 0">
@@ -291,6 +295,7 @@
             <p class="modal-text"><strong>Owes:</strong> {{ selectedLoan.pendingAmount | currency:'INR':'symbol':'1.0-2' }} ({{ selectedLoan.paymentFrequency }})</p>
             <p class="modal-text"><strong>Total Repaid:</strong> {{ selectedLoan.totalRepaid | currency:'INR':'symbol':'1.0-2' }}</p>
             <p class="modal-text"><strong>Date:</strong> {{ selectedLoan.startDate | date:'dd MMM yy' }}</p>
+            <p class="modal-text" *ngIf="selectedLoan.collectionStartDate"><strong>Collection Start:</strong> {{ selectedLoan.collectionStartDate | date:'dd MMM yy' }}</p>
           </ion-card-content>
         </ion-card>
 
