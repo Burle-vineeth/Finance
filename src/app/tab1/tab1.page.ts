@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
   IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol, IonSpinner, 
@@ -8,14 +9,14 @@ import {
 } from '@ionic/angular/standalone';
 import { ApiService } from '../services/api.service';
 import { addIcons } from 'ionicons';
-import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline, checkmarkCircleOutline } from 'ionicons/icons';
+import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline, checkmarkCircleOutline, settingsOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tab1',
   templateUrl: 'tab1.page.html',
   styleUrls: ['tab1.page.scss'],
   imports: [
-    CommonModule, 
+    CommonModule, RouterModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
     IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol, IonSpinner,
     IonList, IonItem, IonLabel, IonIcon, IonButtons, IonButton
@@ -41,7 +42,8 @@ export class Tab1Page implements OnInit {
       'wallet-outline': walletOutline,
       'alert-circle-outline': alertCircleOutline,
       'calendar-outline': calendarOutline,
-      'checkmark-circle-outline': checkmarkCircleOutline
+      'checkmark-circle-outline': checkmarkCircleOutline,
+      'settings-outline': settingsOutline
     });
   }
 

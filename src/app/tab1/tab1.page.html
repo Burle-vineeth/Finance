@@ -2,6 +2,9 @@
   <ion-toolbar color="primary">
     <ion-title>Command Center</ion-title>
     <ion-buttons slot="end">
+      <ion-button routerLink="/settings">
+        <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
+      </ion-button>
       <ion-button (click)="toggleRole()" style="font-weight: bold;">
         Role: {{ userRole() }}
       </ion-button>
