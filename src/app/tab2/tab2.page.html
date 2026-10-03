@@ -290,6 +290,7 @@
             <p class="status-text"><strong>Status:</strong> <ion-badge
                 [color]="selectedLoan.status === 'ACTIVE' ? 'primary' : (selectedLoan.status === 'CLOSED' ? 'success' : 'danger')">{{
                 selectedLoan.status }}</ion-badge></p>
+            <p class="modal-text"><strong>Duration:</strong> {{ getLoanDurationString(selectedLoan) }}</p>
             <p class="modal-text"><strong>Disbursed:</strong> {{ selectedLoan.principalAmount | currency:'INR':'symbol':'1.0-2' }}</p>
             <p class="modal-text"><strong>Expected Return:</strong> {{ selectedLoan.expectedReturnAmount | currency:'INR':'symbol':'1.0-2' }}</p>
             <p class="modal-text"><strong>Owes:</strong> {{ selectedLoan.pendingAmount | currency:'INR':'symbol':'1.0-2' }} ({{ selectedLoan.paymentFrequency }})</p>

@@ -63,6 +63,29 @@ export class Tab2Page implements OnInit {
     this.selectedLoan = null;
   }
 
+  getLoanDurationString(loan: any): string {
+    if (!loan) return '';
+    const start = new Date(loan.collectionStartDate || loan.startDate);
+    let end = new Date();
+
+    if (loan.status === 'CLOSED' || loan.status === 'DEFAULTED') {
+      if (loan.resolvedAt) {
+        end = new Date(loan.resolvedAt);
+      } else {
+        const txs = this.getLoanTransactions(loan._id || loan.id);
+        if (txs && txs.length > 0) {
+          end = new Date(txs[0].date); // txs are sorted by date desc
+        } else {
+          end = new Date(loan.updatedAt || new Date());
+        }
+      }
+    }
+
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} Days`;
+  }
+
   getCollectionPercentage(loan: any): number {
     if (!loan || !loan.expectedReturnAmount) return 0;
     return (loan.totalRepaid || 0) / loan.expectedReturnAmount;
