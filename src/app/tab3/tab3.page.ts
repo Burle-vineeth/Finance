@@ -5,11 +5,10 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
   IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-  IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption
+  IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonItemDivider
 } from '@ionic/angular/standalone';
 import { AlertController } from '@ionic/angular';
 import { ApiService } from '../services/api.service';
-
 import { arrowUpCircle, arrowDownCircle, trashOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 
@@ -21,7 +20,7 @@ import { addIcons } from 'ionicons';
     CommonModule, FormsModule, ReactiveFormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
     IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-    IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption
+    IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonItemDivider
   ]
 })
 export class Tab3Page implements OnInit {

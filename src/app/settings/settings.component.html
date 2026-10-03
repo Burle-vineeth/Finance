@@ -1,0 +1,45 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Settings</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" color="light">
+  <ion-card class="form-card highlight-card" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-top: 4px solid var(--ion-color-primary); margin: 0 auto; max-width: 600px;">
+    <ion-card-header>
+      <ion-card-title>Security Settings</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p style="margin-left: 0; margin-bottom: 1.5rem; color: var(--ion-color-medium);">
+        Update your application PIN to secure the dashboard.
+      </p>
+
+      <ion-item lines="full">
+        <ion-icon name="key-outline" slot="start" color="medium"></ion-icon>
+        <ion-input label="Old PIN" labelPlacement="floating" type="password" [(ngModel)]="changePinData.oldPin" maxlength="4"></ion-input>
+      </ion-item>
+      
+      <ion-item lines="full">
+        <ion-icon name="lock-closed-outline" slot="start" color="medium"></ion-icon>
+        <ion-input label="New 4-Digit PIN" labelPlacement="floating" type="password" [(ngModel)]="changePinData.newPin" maxlength="4"></ion-input>
+      </ion-item>
+
+      <div style="margin-top: 2rem;">
+        <ion-button expand="block" color="primary" (click)="onChangePin()" [disabled]="!changePinData.oldPin || changePinData.newPin?.length !== 4" style="--border-radius: 8px; height: 48px; font-weight: 600;">
+          Change PIN
+        </ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-toast
+    [isOpen]="showToast"
+    [message]="toastMessage"
+    [duration]="2500"
+    [color]="toastColor"
+    (didDismiss)="showToast = false"
+  ></ion-toast>
+</ion-content>

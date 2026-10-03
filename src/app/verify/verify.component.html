@@ -1,0 +1,41 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>App Locked</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content color="light" class="ion-padding">
+  <div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+    <ion-card class="form-card highlight-card" style="margin: 0 auto; width: 100%; max-width: 380px;">
+      <ion-card-header class="ion-text-center">
+        <ion-icon name="lock-closed" color="primary" style="font-size: 64px; margin-bottom: 1rem;"></ion-icon>
+        <ion-card-title style="font-size: 1.5rem; font-weight: 600;">Finance Secured</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p class="ion-text-center" style="color: var(--ion-color-medium); margin-bottom: 2rem;">
+          Enter your 4-digit PIN to access the application.
+        </p>
+
+        <ion-item lines="full">
+          <ion-input
+            type="password"
+            [(ngModel)]="pin"
+            maxlength="4"
+            placeholder="PIN"
+            class="ion-text-center"
+            style="font-size: 24px; letter-spacing: 12px; font-weight: bold;"></ion-input>
+        </ion-item>
+
+        <ion-text color="danger" *ngIf="errorMsg" class="ion-text-center" style="display: block; margin-top: 1rem;">
+          <p>{{ errorMsg }}</p>
+        </ion-text>
+
+        <div style="margin-top: 2.5rem;">
+          <ion-button expand="block" color="primary" (click)="verify()" [disabled]="pin?.length !== 4" style="height: 48px; font-weight: 600;">
+            Unlock App
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
