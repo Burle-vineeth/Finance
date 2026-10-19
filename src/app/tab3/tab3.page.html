@@ -59,7 +59,7 @@
   <!-- View Mode: Ledger -->
   <div *ngIf="viewMode === 'ledger' || userRole() === 'AUDITOR'">
     <ion-list class="transparent-list" *ngIf="transactions.length > 0; else noTransactions">
-      <ion-item-sliding *ngFor="let t of transactions">
+      <ion-item-sliding *ngFor="let t of transactions; trackBy: trackById">
         <ion-item lines="none">
           <ion-icon 
             slot="start" 
