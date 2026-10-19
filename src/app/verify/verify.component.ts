@@ -1,14 +1,23 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import {
+  IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, IonCardTitle,
+  IonCardContent, IonIcon, IonItem, IonInput, IonText, IonButton
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { lockClosed } from 'ionicons/icons';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-verify',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [
+    CommonModule, FormsModule,
+    IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, IonCardTitle,
+    IonCardContent, IonIcon, IonItem, IonInput, IonText, IonButton
+  ],
   templateUrl: './verify.component.html',
   styleUrls: ['./verify.component.scss']
 })
@@ -17,6 +26,10 @@ export class VerifyComponent {
   errorMsg: string = '';
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  constructor() {
+    addIcons({ 'lock-closed': lockClosed });
+  }
 
   async verify() {
     this.errorMsg = '';
