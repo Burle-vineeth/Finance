@@ -96,6 +96,10 @@ export class Tab2Page implements OnInit {
     return this.loanTransactionsMap[loanId] || [];
   }
 
+  getRepaymentCount(loanId: string | undefined): number {
+    return this.getLoanTransactions(loanId).filter(t => t.type === 'REPAYMENT').length;
+  }
+
   clientForm: FormGroup;
   loanForm: FormGroup;
   capitalForm: FormGroup;
