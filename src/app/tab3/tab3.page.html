@@ -42,7 +42,8 @@
           </ion-item>
 
           <div class="btn-container">
-            <ion-button expand="block" color="success" type="submit" [disabled]="repaymentForm.invalid || activeLoans.length === 0">
+            <ion-button expand="block" color="success" type="submit" [disabled]="repaymentForm.invalid || activeLoans.length === 0 || isSavingRepayment">
+              <ion-spinner *ngIf="isSavingRepayment" slot="start" name="crescent"></ion-spinner>
               Log Payment
             </ion-button>
           </div>
@@ -84,7 +85,10 @@
         
         <ion-item-options side="end" *ngIf="(t.type === 'REPAYMENT' || t.type === 'BUSINESS_EXPENSE') && userRole() === 'ADMIN'">
           <ion-item-option color="danger" (click)="confirmDeleteTransaction(t._id)">
-            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            <ion-spinner *ngIf="deletingId === t._id; else trashIcon" slot="icon-only" name="crescent"></ion-spinner>
+            <ng-template #trashIcon>
+              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ng-template>
           </ion-item-option>
         </ion-item-options>
       </ion-item-sliding>

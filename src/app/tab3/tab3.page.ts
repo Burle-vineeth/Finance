@@ -5,9 +5,10 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
   IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-  IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonItemDivider,
+  IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonItemDivider, IonSpinner,
   AlertController
 } from '@ionic/angular/standalone';
+import { finalize } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
 import { arrowUpCircle, arrowDownCircle, trashOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
@@ -20,7 +21,7 @@ import { addIcons } from 'ionicons';
     CommonModule, FormsModule, ReactiveFormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
     IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-    IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonItemDivider
+    IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonItemDivider, IonSpinner
   ]
 })
 export class Tab3Page implements OnInit {
@@ -36,7 +37,11 @@ export class Tab3Page implements OnInit {
   
   repaymentForm: FormGroup;
   viewMode: 'collect' | 'ledger' = 'collect';
-  
+
+  // Set while a request is running so a second tap can't send it again
+  isSavingRepayment = false;
+  deletingId: string | null = null;
+
   showToast = false;
   toastMessage = '';
   toastColor = 'success';
@@ -88,7 +93,7 @@ export class Tab3Page implements OnInit {
   }
 
   onLogRepayment() {
-    if (this.repaymentForm.invalid) return;
+    if (this.repaymentForm.invalid || this.isSavingRepayment) return;
 
     const rawAmount = String(this.repaymentForm.value.amount).replace(/,/g, '');
 
@@ -100,7 +105,10 @@ export class Tab3Page implements OnInit {
       notes: 'Logged via App'
     };
 
-    this.apiService.addTransaction(payload).subscribe({
+    this.isSavingRepayment = true;
+    this.apiService.addTransaction(payload).pipe(
+      finalize(() => this.isSavingRepayment = false)
+    ).subscribe({
       next: (res) => {
         this.displayToast('Repayment logged successfully! Dashboard updated.');
         this.repaymentForm.reset({
@@ -124,6 +132,8 @@ export class Tab3Page implements OnInit {
   }
 
   async confirmDeleteTransaction(transactionId: string) {
+    if (this.deletingId) return;
+
     const alert = await this.alertController.create({
       header: 'Undo Transaction?',
       message: 'This will completely remove the transaction and reverse any associated loan calculations. Are you sure?',
@@ -142,7 +152,12 @@ export class Tab3Page implements OnInit {
   }
 
   onDeleteTransaction(id: string) {
-    this.apiService.deleteTransaction(id).subscribe({
+    if (this.deletingId) return;
+
+    this.deletingId = id;
+    this.apiService.deleteTransaction(id).pipe(
+      finalize(() => this.deletingId = null)
+    ).subscribe({
       next: () => {
         this.displayToast('Transaction successfully undone.');
       },

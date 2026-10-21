@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, IonCardTitle,
-  IonCardContent, IonIcon, IonItem, IonInput, IonText, IonButton
+  IonCardContent, IonIcon, IonItem, IonInput, IonText, IonButton, IonSpinner
 } from '@ionic/angular/standalone';
+import { finalize } from 'rxjs/operators';
 import { addIcons } from 'ionicons';
 import { lockClosed } from 'ionicons/icons';
 import { AuthService } from '../services/auth.service';
@@ -16,7 +17,7 @@ import { Router } from '@angular/router';
   imports: [
     CommonModule, FormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, IonCardTitle,
-    IonCardContent, IonIcon, IonItem, IonInput, IonText, IonButton
+    IonCardContent, IonIcon, IonItem, IonInput, IonText, IonButton, IonSpinner
   ],
   templateUrl: './verify.component.html',
   styleUrls: ['./verify.component.scss']
@@ -24,6 +25,7 @@ import { Router } from '@angular/router';
 export class VerifyComponent {
   pin: string = '';
   errorMsg: string = '';
+  isVerifying = false;
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -32,6 +34,7 @@ export class VerifyComponent {
   }
 
   async verify() {
+    if (this.isVerifying) return;
     this.errorMsg = '';
     
     if (this.pin.length !== 4) {
@@ -39,11 +42,14 @@ export class VerifyComponent {
       return;
     }
 
-    this.authService.verifyPin(this.pin).subscribe(success => {
-      if (success) {
+    this.isVerifying = true;
+    this.authService.verifyPin(this.pin).pipe(
+      finalize(() => this.isVerifying = false)
+    ).subscribe(result => {
+      if (result.success) {
         this.router.navigate(['/']);
       } else {
-        this.errorMsg = 'Invalid PIN. Please try again.';
+        this.errorMsg = result.message || 'Invalid PIN. Please try again.';
       }
     });
   }

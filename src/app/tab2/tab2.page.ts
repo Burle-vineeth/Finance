@@ -5,8 +5,9 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
   IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-  IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonList, IonBadge, IonModal, IonButtons, IonAvatar
+  IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonList, IonBadge, IonModal, IonButtons, IonAvatar, IonSpinner
 } from '@ionic/angular/standalone';
+import { finalize } from 'rxjs/operators';
 import { addIcons } from 'ionicons';
 import { arrowUpCircle, arrowDownCircle, documentTextOutline, walletOutline, cashOutline, chevronForward, arrowBack, call } from 'ionicons/icons';
 import { ApiService } from '../services/api.service';
@@ -20,7 +21,7 @@ import { EmptyStateComponent } from '../components/empty-state/empty-state.compo
     CommonModule, FormsModule, ReactiveFormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
     IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-    IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonList, IonBadge, IonModal, IonButtons, IonAvatar,
+    IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonList, IonBadge, IonModal, IonButtons, IonAvatar, IonSpinner,
     EmptyStateComponent
   ]
 })
@@ -96,10 +97,19 @@ export class Tab2Page implements OnInit {
     return this.loanTransactionsMap[loanId] || [];
   }
 
+  getRepaymentCount(loanId: string | undefined): number {
+    return this.getLoanTransactions(loanId).filter(t => t.type === 'REPAYMENT').length;
+  }
+
   clientForm: FormGroup;
   loanForm: FormGroup;
   capitalForm: FormGroup;
-  
+
+  // Set while a request is running so a second tap can't send it again
+  isSavingCapital = false;
+  isSavingClient = false;
+  isSavingLoan = false;
+
   showToast = false;
   toastMessage = '';
   toastColor = 'success';
@@ -192,12 +202,15 @@ export class Tab2Page implements OnInit {
   }
 
   onManageCapital() {
-    if (this.capitalForm.invalid) return;
-    
+    if (this.capitalForm.invalid || this.isSavingCapital) return;
+
     const payload = { ...this.capitalForm.value };
     payload.amount = Number(String(payload.amount).replace(/,/g, ''));
 
-    this.apiService.addTransaction(payload).subscribe({
+    this.isSavingCapital = true;
+    this.apiService.addTransaction(payload).pipe(
+      finalize(() => this.isSavingCapital = false)
+    ).subscribe({
       next: (res) => {
         this.displayToast('Transaction logged!');
         this.capitalForm.reset({ 
@@ -212,9 +225,12 @@ export class Tab2Page implements OnInit {
   }
 
   onCreateClient() {
-    if (this.clientForm.invalid) return;
-    
-    this.apiService.addClient(this.clientForm.value).subscribe({
+    if (this.clientForm.invalid || this.isSavingClient) return;
+
+    this.isSavingClient = true;
+    this.apiService.addClient(this.clientForm.value).pipe(
+      finalize(() => this.isSavingClient = false)
+    ).subscribe({
       next: (res) => {
         this.displayToast('Client created successfully!');
         this.clientForm.reset();
@@ -226,13 +242,16 @@ export class Tab2Page implements OnInit {
   }
 
   onDisburseLoan() {
-    if (this.loanForm.invalid) return;
+    if (this.loanForm.invalid || this.isSavingLoan) return;
 
     const payload = { ...this.loanForm.value };
     payload.principalAmount = Number(String(payload.principalAmount).replace(/,/g, ''));
     payload.expectedReturnAmount = Number(String(payload.expectedReturnAmount).replace(/,/g, ''));
 
-    this.apiService.addLoan(payload).subscribe({
+    this.isSavingLoan = true;
+    this.apiService.addLoan(payload).pipe(
+      finalize(() => this.isSavingLoan = false)
+    ).subscribe({
       next: (res) => {
         this.displayToast('Loan disbursed successfully!');
         this.loanForm.reset({ 

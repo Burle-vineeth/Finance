@@ -35,3 +35,10 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+
+/* Spinner shown inside a button while its request is running */
+ion-button ion-spinner {
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 8px;
+}

@@ -51,8 +51,10 @@
               placeholder="Initial Investment"></ion-input>
           </ion-item>
           <div class="btn-container">
-            <ion-button expand="block" color="tertiary" type="submit" [disabled]="capitalForm.invalid">Record
-              Capital</ion-button>
+            <ion-button expand="block" color="tertiary" type="submit" [disabled]="capitalForm.invalid || isSavingCapital">
+              <ion-spinner *ngIf="isSavingCapital" slot="start" name="crescent"></ion-spinner>
+              Record Capital
+            </ion-button>
           </div>
         </form>
       </ion-card-content>
@@ -78,7 +80,10 @@
               placeholder="123 Main St"></ion-input>
           </ion-item>
           <div class="btn-container">
-            <ion-button expand="block" type="submit" [disabled]="clientForm.invalid">Create Client</ion-button>
+            <ion-button expand="block" type="submit" [disabled]="clientForm.invalid || isSavingClient">
+              <ion-spinner *ngIf="isSavingClient" slot="start" name="crescent"></ion-spinner>
+              Create Client
+            </ion-button>
           </div>
         </form>
       </ion-card-content>
@@ -129,7 +134,8 @@
           </ion-item>
           <div class="btn-container">
             <ion-button expand="block" color="success" type="submit"
-              [disabled]="loanForm.invalid || clients.length === 0">
+              [disabled]="loanForm.invalid || clients.length === 0 || isSavingLoan">
+              <ion-spinner *ngIf="isSavingLoan" slot="start" name="crescent"></ion-spinner>
               Authorize Disbursement
             </ion-button>
           </div>
@@ -295,6 +301,7 @@
             <p class="modal-text"><strong>Expected Return:</strong> {{ selectedLoan.expectedReturnAmount | currency:'INR':'symbol':'1.0-2' }}</p>
             <p class="modal-text"><strong>Owes:</strong> {{ selectedLoan.pendingAmount | currency:'INR':'symbol':'1.0-2' }} ({{ selectedLoan.paymentFrequency }})</p>
             <p class="modal-text"><strong>Total Repaid:</strong> {{ selectedLoan.totalRepaid | currency:'INR':'symbol':'1.0-2' }}</p>
+            <p class="modal-text"><strong>Repayments:</strong> {{ getRepaymentCount(selectedLoan._id) }}</p>
             <p class="modal-text"><strong>Date:</strong> {{ selectedLoan.startDate | date:'dd MMM yy' }}</p>
             <p class="modal-text" *ngIf="selectedLoan.collectionStartDate"><strong>Collection Start:</strong> {{ selectedLoan.collectionStartDate | date:'dd MMM yy' }}</p>
           </ion-card-content>
