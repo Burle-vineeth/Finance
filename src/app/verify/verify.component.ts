@@ -45,11 +45,11 @@ export class VerifyComponent {
     this.isVerifying = true;
     this.authService.verifyPin(this.pin).pipe(
       finalize(() => this.isVerifying = false)
-    ).subscribe(success => {
-      if (success) {
+    ).subscribe(result => {
+      if (result.success) {
         this.router.navigate(['/']);
       } else {
-        this.errorMsg = 'Invalid PIN. Please try again.';
+        this.errorMsg = result.message || 'Invalid PIN. Please try again.';
       }
     });
   }
