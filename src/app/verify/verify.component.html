@@ -31,7 +31,8 @@
         </ion-text>
 
         <div style="margin-top: 2.5rem;">
-          <ion-button expand="block" color="primary" (click)="verify()" [disabled]="pin?.length !== 4" style="height: 48px; font-weight: 600;">
+          <ion-button expand="block" color="primary" (click)="verify()" [disabled]="pin?.length !== 4 || isVerifying" style="height: 48px; font-weight: 600;">
+            <ion-spinner *ngIf="isVerifying" slot="start" name="crescent"></ion-spinner>
             Unlock App
           </ion-button>
         </div>

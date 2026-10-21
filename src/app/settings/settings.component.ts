@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, IonItem, IonInput, IonButton, IonIcon, IonToast, IonButtons, IonBackButton
+  IonCardTitle, IonCardContent, IonItem, IonInput, IonButton, IonIcon, IonToast, IonButtons, IonBackButton, IonSpinner
 } from '@ionic/angular/standalone';
+import { finalize } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { keyOutline, lockClosedOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
@@ -15,7 +16,7 @@ import { addIcons } from 'ionicons';
   imports: [
     CommonModule, FormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-    IonCardTitle, IonCardContent, IonItem, IonInput, IonButton, IonIcon, IonToast, IonButtons, IonBackButton
+    IonCardTitle, IonCardContent, IonItem, IonInput, IonButton, IonIcon, IonToast, IonButtons, IonBackButton, IonSpinner
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss']
@@ -24,7 +25,8 @@ export class SettingsComponent {
   private authService = inject(AuthService);
   
   changePinData = { oldPin: '', newPin: '' };
-  
+  isChangingPin = false;
+
   showToast = false;
   toastMessage = '';
   toastColor = 'success';
@@ -40,7 +42,12 @@ export class SettingsComponent {
   }
 
   onChangePin() {
-    this.authService.changePin(this.changePinData.oldPin, this.changePinData.newPin).subscribe({
+    if (this.isChangingPin) return;
+
+    this.isChangingPin = true;
+    this.authService.changePin(this.changePinData.oldPin, this.changePinData.newPin).pipe(
+      finalize(() => this.isChangingPin = false)
+    ).subscribe({
       next: (res) => {
         this.displayToast(res.message, 'success');
         this.changePinData = { oldPin: '', newPin: '' };

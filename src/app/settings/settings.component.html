@@ -28,7 +28,8 @@
       </ion-item>
 
       <div style="margin-top: 2rem;">
-        <ion-button expand="block" color="primary" (click)="onChangePin()" [disabled]="!changePinData.oldPin || changePinData.newPin?.length !== 4" style="--border-radius: 8px; height: 48px; font-weight: 600;">
+        <ion-button expand="block" color="primary" (click)="onChangePin()" [disabled]="!changePinData.oldPin || changePinData.newPin?.length !== 4 || isChangingPin" style="--border-radius: 8px; height: 48px; font-weight: 600;">
+          <ion-spinner *ngIf="isChangingPin" slot="start" name="crescent"></ion-spinner>
           Change PIN
         </ion-button>
       </div>
