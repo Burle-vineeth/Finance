@@ -1,8 +1,56 @@
-.form-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+.lock-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100%;
 }
 
-.highlight-card {
-  border-top: 4px solid var(--ion-color-primary);
+.lock-card {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 28px 22px 22px;
+  text-align: center;
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+}
+
+.lock-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 20px;
+  font-size: 30px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--app-hero-from), var(--app-hero-to));
+  box-shadow: 0 10px 24px -10px rgba(37, 99, 235, 0.6);
+}
+
+.lock-sub {
+  margin: 0 0 22px;
+  font-size: 0.9rem;
+  color: var(--app-text-2);
+}
+
+.pin-field {
+  --min-height: 64px;
+  margin-bottom: 14px;
+
+  ion-input {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 14px;
+    text-align: center;
+  }
+}
+
+.banner {
+  text-align: left;
 }

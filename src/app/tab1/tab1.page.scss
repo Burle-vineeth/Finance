@@ -1,141 +1,242 @@
-@media (prefers-color-scheme: light) {
-  ion-content {
-    --background: #f4f5f8;
-  }
-}
-
-.loading-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 60vh;
-  color: var(--ion-color-medium);
-}
-
-.error-msg {
-  color: var(--ion-color-danger);
-  text-align: center;
-  margin-top: 2rem;
-  font-weight: 600;
-}
-
-.equity-card {
-  background: var(--ion-color-primary);
-  color: white;
-  margin: 1rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-
-  ion-card-title {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  p {
-    color: rgba(255, 255, 255, 0.8);
-    margin: 0;
-    font-size: 0.9rem;
-  }
-}
-
-.huge-amount {
-  font-size: 2.8rem;
-  font-weight: 700;
-  margin: 0.5rem 0;
-  color: white;
-}
-
-.metric-card {
-  margin: 0.5rem 0;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
-  ion-card-content {
-    padding: 1rem;
-    text-align: center;
-  }
-}
-
-.metric-label {
+.role-btn {
+  --padding-start: 10px;
+  --padding-end: 12px;
+  --border-radius: 999px;
+  --background: var(--app-surface-2);
+  --color: var(--app-text-2);
+  height: 32px;
+  margin-inline-end: 4px;
   font-size: 0.8rem;
-  color: var(--ion-color-medium);
-  text-transform: uppercase;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0;
+  text-transform: none;
+
+  ion-icon {
+    margin-inline-end: 4px;
+    font-size: 1rem;
+  }
+
+  &::part(native) {
+    border-radius: 999px;
+  }
 }
 
-.metric-value {
-  font-size: 1.4rem;
+/* Total equity card */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 20px 18px;
+  border-radius: 22px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--app-hero-from), var(--app-hero-to));
+  box-shadow: 0 14px 30px -14px rgba(37, 99, 235, 0.6);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -70px;
+    right: -60px;
+    width: 210px;
+    height: 210px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    pointer-events: none;
+  }
+}
+
+.hero-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.hero-amount {
+  margin: 6px 0 2px;
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.hero-caption {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.split-bar {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+  margin: 18px 0 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+
+  span {
+    display: block;
+    height: 100%;
+  }
+}
+
+.hero-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.split-bar + .hero-split {
+  margin-top: 0;
+}
+
+.hero-split-end {
+  text-align: right;
+
+  .legend {
+    justify-content: flex-end;
+  }
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.seg-cash,
+.dot-cash {
+  background: #6ee7b7;
+}
+
+.seg-market,
+.dot-market {
+  background: #fcd34d;
+}
+
+.hero-sub-amount {
+  margin-top: 2px;
+  font-size: 1.15rem;
   font-weight: 700;
 
-  &.cash {
-    color: var(--ion-color-success);
-  }
-
-  &.outstanding {
-    color: var(--ion-color-warning);
-  }
-
-  &.profit {
-    color: var(--ion-color-primary);
-  }
-
-  &.pending {
-    color: var(--ion-color-secondary);
+  &.is-neg {
+    color: #fecaca;
   }
 }
 
-.section-title {
-  font-size: 1.1rem;
+.hero-pct {
+  margin-top: 1px;
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+/* Today's collections */
+.today-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.today-amount {
+  margin-top: 2px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.today-target {
+  text-align: right;
+}
+
+.today-target-amount {
+  margin-top: 2px;
+  font-size: 1rem;
   font-weight: 700;
-  margin: 1.5rem 1rem 0.5rem;
-  color: var(--ion-color-dark);
+  color: var(--app-text);
 }
 
-.target-card {
-  margin: 0 1rem;
+.today-foot {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--app-text-2);
+}
+
+/* Capital & profit statement */
+.pl-card {
+  padding: 4px 16px 14px;
+}
+
+.pl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--app-text);
+
+  span:first-child {
+    font-weight: 500;
+    color: var(--app-text-2);
+  }
+}
+
+.pl-row + .pl-row {
+  border-top: 1px solid var(--app-border);
+}
+
+.pl-total {
+  font-size: 1.05rem;
+  font-weight: 800;
+
+  span:first-child {
+    font-weight: 700;
+    color: var(--app-text);
+  }
+}
+
+.pl-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px 12px;
   border-radius: 12px;
-  background: var(--ion-card-background, #ffffff);
-  border-left: 4px solid var(--ion-color-success);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  font-size: 0.82rem;
+  color: var(--app-text-2);
+  background: var(--app-surface-2);
 
-  .target-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 600;
+  ion-icon {
+    flex: none;
+    font-size: 1rem;
+  }
 
-    .target-amount {
-      font-size: 1.2rem;
-      color: var(--ion-color-success);
-    }
+  .num {
+    margin-left: auto;
+    font-weight: 700;
+    color: var(--app-info);
   }
 }
 
-.transparent-list {
-  background: transparent;
-  margin: 0 1rem;
-
-  ion-item {
-    --background: var(--ion-item-background, #ffffff);
-    --border-radius: 12px;
-    margin-bottom: 0.5rem;
-    --padding-start: 1rem;
-    --padding-end: 1rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-
-    h2 {
-      font-weight: 600;
-    }
-  }
+/* Active loans */
+.due-chip {
+  margin-top: 7px;
 }
 
-.empty-state {
+.empty-inline {
   text-align: center;
-  color: var(--ion-color-medium);
-  margin-top: 1rem;
+  color: var(--app-text-2);
 }
