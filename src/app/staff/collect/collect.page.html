@@ -1,0 +1,162 @@
+<ion-header [translucent]="true" class="ion-no-border app-header" mode="md">
+  <ion-toolbar>
+    <ion-title>Collect</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/settings" aria-label="Settings">
+        <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar class="toolbar-seg">
+    <ion-searchbar [(ngModel)]="search" placeholder="Search name or phone" class="app-search" mode="ios"></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="greeting">
+    <h2>Hi{{ firstName ? ', ' + firstName : '' }}</h2>
+    <p>{{ dueCount }} to collect today · {{ sentTodayCount }} sent for approval</p>
+  </div>
+
+  <ion-segment [(ngModel)]="filter" mode="ios" class="app-seg seg-inline">
+    <ion-segment-button value="due">
+      <ion-label>To collect ({{ dueCount }})</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="all">
+      <ion-label>All loans ({{ loans.length }})</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  @if (error) {
+    <div class="banner banner-error">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <span>{{ error }}</span>
+    </div>
+  }
+
+  @if (isLoading && !loans.length) {
+    <div class="loading-center">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Loading loans…</span>
+    </div>
+  } @else if (visibleLoans.length) {
+    <div class="app-card list-card">
+      @for (l of visibleLoans; track trackById($index, l)) {
+        <button type="button" class="row loan-row" (click)="openCollect(l)">
+          <div class="avatar av-{{ (l.client?.name?.charCodeAt(0) + l.client?.name?.charCodeAt(l.client?.name?.length - 1)) % 6 }}">{{ l.client?.name?.charAt(0) || '?' }}</div>
+          <div class="row-main">
+            <div class="row-title">{{ l.client?.name }}</div>
+            <div class="row-sub num">{{ l.installment | currency:'INR':'symbol':'1.0-2' }} · {{ l.paymentFrequency | lowercase }} · owes {{ l.pendingAmount | currency:'INR':'symbol':'1.0-0' }}</div>
+            <span class="chip {{ l.due.chip }} due-chip">
+              <ion-icon [name]="l.due.icon"></ion-icon>
+              {{ l.due.label }}
+            </span>
+          </div>
+          <ion-icon name="cash-outline" class="collect-icon"></ion-icon>
+        </button>
+      }
+    </div>
+  } @else if (!isLoading) {
+    <app-empty-state icon="checkmark-circle-outline"
+      [title]="search ? 'No match' : (filter === 'due' ? 'Nothing left to collect today' : 'No active loans')"
+      [message]="search ? 'No loan matches your search.' : (filter === 'due' ? 'Switch to All loans to record any other payment.' : 'Loans the admin gives out will appear here.')"></app-empty-state>
+  }
+
+  <ion-toast [isOpen]="showToast" [message]="toastMessage" [duration]="2500" [color]="toastColor"
+    (didDismiss)="showToast = false"></ion-toast>
+
+  <!-- Record a collection for the chosen loan -->
+  <ion-modal [isOpen]="!!selected" (didDismiss)="closeCollect()">
+    <ng-template>
+      <ion-header class="ion-no-border app-header" mode="md">
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button (click)="closeCollect()" aria-label="Close">
+              <ion-icon slot="icon-only" name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-title>Record collection</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      @if (selected) {
+        @let l = selected;
+        <ion-content class="ion-padding">
+          <div class="app-card">
+            <div class="loan-top">
+              <div class="avatar av-{{ (l.client?.name?.charCodeAt(0) + l.client?.name?.charCodeAt(l.client?.name?.length - 1)) % 6 }}">{{ l.client?.name?.charAt(0) || '?' }}</div>
+              <div class="row-main">
+                <div class="row-title">{{ l.client?.name }}</div>
+                <div class="row-sub">{{ l.client?.phone }}@if (l.client?.address) { · {{ l.client.address }}}</div>
+              </div>
+              @if (l.client?.phone) {
+                <a class="call-btn" [href]="'tel:' + l.client.phone" aria-label="Call">
+                  <ion-icon name="call-outline"></ion-icon>
+                </a>
+              }
+            </div>
+            <div class="kv-grid">
+              <div class="kv">
+                <div class="kv-label">Installment</div>
+                <div class="kv-value">{{ l.installment | currency:'INR':'symbol':'1.0-2' }} <span class="kv-unit">{{ l.paymentFrequency | lowercase }}</span></div>
+              </div>
+              <div class="kv">
+                <div class="kv-label">Still owes</div>
+                <div class="kv-value">{{ l.pendingAmount | currency:'INR':'symbol':'1.0-2' }}</div>
+              </div>
+            </div>
+            @if (l.awaitingApproval?.count) {
+              <div class="banner banner-info pending-note">
+                <ion-icon name="hourglass-outline"></ion-icon>
+                <span>{{ l.awaitingApproval.amount | currency:'INR':'symbol':'1.0-2' }} for this loan is already waiting for approval.</span>
+              </div>
+            }
+          </div>
+
+          <form [formGroup]="form" (ngSubmit)="submit()" class="app-card">
+            <div class="field-row">
+              <ion-item lines="none" class="field">
+                <ion-input label="Amount received" labelPlacement="stacked" formControlName="amount" type="text" inputmode="numeric"
+                  placeholder="₹600" (ionInput)="formatCurrencyInput($event, 'amount')"></ion-input>
+              </ion-item>
+              <ion-item lines="none" class="field date-field" button [detail]="false" id="staff-collect-date-trigger">
+                <div class="date-text">
+                  <span class="date-label">Date received</span>
+                  <span class="date-value">{{ form.value.date | date:'d MMM y' }}</span>
+                </div>
+                <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+              </ion-item>
+            </div>
+            <!-- Not keepContentsMounted: a calendar kept alive while hidden reopens showing the wrong month's days -->
+            <ion-modal #collectDateModal trigger="staff-collect-date-trigger" class="date-dialog">
+              <ng-template>
+                <ion-datetime mode="ios" presentation="date" locale="en-IN" formControlName="date" [max]="today"
+                  [showDefaultTitle]="true" (ionChange)="collectDateModal.dismiss()">
+                  <span slot="title">Date received</span>
+                </ion-datetime>
+              </ng-template>
+            </ion-modal>
+            <ion-item lines="none" class="field">
+              <ion-input label="Note (optional)" labelPlacement="stacked" formControlName="notes" maxlength="500"
+                placeholder="e.g. Paid for 2 days"></ion-input>
+            </ion-item>
+            <ion-button expand="block" class="app-btn" color="success" type="submit" [disabled]="form.invalid || isSaving">
+              @if (isSaving) {
+                <ion-spinner slot="start" name="crescent"></ion-spinner>
+              }
+              Send for approval
+            </ion-button>
+          </form>
+
+          <div class="banner banner-info">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            <span>The admin checks each collection before it is added to the books. You can follow it under <strong>My entries</strong>.</span>
+          </div>
+        </ion-content>
+      }
+    </ng-template>
+  </ion-modal>
+</ion-content>

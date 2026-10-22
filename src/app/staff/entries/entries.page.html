@@ -1,0 +1,97 @@
+<ion-header [translucent]="true" class="ion-no-border app-header" mode="md">
+  <ion-toolbar>
+    <ion-title>My entries</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/settings" aria-label="Settings">
+        <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar class="toolbar-seg">
+    <ion-segment [(ngModel)]="view" mode="ios" class="app-seg">
+      <ion-segment-button value="pending">
+        <ion-label>Pending ({{ pending.length }})</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="approved">
+        <ion-label>Approved</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="other">
+        <ion-label>Not approved</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  @if (isLoading && !entries.length) {
+    <div class="loading-center">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Loading…</span>
+    </div>
+  } @else if (visible.length) {
+    <div class="app-card list-card">
+      @for (e of visible; track trackById($index, e)) {
+        <div class="row entry-row">
+          <div class="avatar av-{{ (e.client?.name?.charCodeAt(0) + e.client?.name?.charCodeAt(e.client?.name?.length - 1)) % 6 }}">{{ e.client?.name?.charAt(0) || '?' }}</div>
+          <div class="row-main">
+            <div class="row-title">{{ e.client?.name }}</div>
+            <div class="row-sub">Collected {{ e.date | date:'d MMM' }} · sent {{ e.createdAt | date:'d MMM, h:mm a' }}</div>
+            @switch (e.status) {
+              @case ('PENDING') {
+                <div class="status-line"><span class="chip chip-info"><ion-icon name="time-outline"></ion-icon>Waiting for approval</span></div>
+              }
+              @case ('APPROVED') {
+                <div class="status-line">
+                  <span class="chip chip-success">Approved</span>
+                  <span class="status-meta">by {{ e.reviewedBy?.name || 'admin' }} · {{ e.reviewedAt | date:'d MMM' }}</span>
+                </div>
+                @if (e.approvedAmount !== undefined && e.approvedAmount !== e.amount) {
+                  <div class="status-note">Recorded as {{ e.approvedAmount | currency:'INR':'symbol':'1.0-2' }}</div>
+                }
+              }
+              @case ('REJECTED') {
+                <div class="status-line">
+                  <span class="chip chip-danger">Rejected</span>
+                  <span class="status-meta">by {{ e.reviewedBy?.name || 'admin' }} · {{ e.reviewedAt | date:'d MMM' }}</span>
+                </div>
+                @if (e.rejectionReason) {
+                  <div class="status-note reason">“{{ e.rejectionReason }}”</div>
+                }
+              }
+              @case ('CANCELLED') {
+                <div class="status-line"><span class="chip">Withdrawn by you</span></div>
+              }
+              @case ('REVERSED') {
+                <div class="status-line"><span class="chip chip-warning">Undone by admin after approval</span></div>
+              }
+            }
+          </div>
+          <div class="row-end">
+            <div class="row-amount" [class.pos]="e.status === 'APPROVED'">{{ e.amount | currency:'INR':'symbol':'1.0-2' }}</div>
+            @if (e.status === 'PENDING') {
+              <ion-button fill="clear" size="small" color="medium" class="withdraw-btn" (click)="confirmWithdraw(e)" [disabled]="!!withdrawingId">
+                @if (withdrawingId === e._id) {
+                  <ion-spinner slot="start" name="crescent"></ion-spinner>
+                } @else {
+                  <ion-icon slot="start" name="arrow-undo-outline"></ion-icon>
+                }
+                Withdraw
+              </ion-button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <app-empty-state icon="time-outline"
+      [title]="view === 'pending' ? 'Nothing waiting' : (view === 'approved' ? 'Nothing approved yet' : 'Nothing here')"
+      [message]="view === 'pending' ? 'Collections you send appear here until the admin approves them.' : 'Your collections will be listed here once the admin reviews them.'"></app-empty-state>
+  }
+
+  <ion-toast [isOpen]="showToast" [message]="toastMessage" [duration]="2500" [color]="toastColor"
+    (didDismiss)="showToast = false"></ion-toast>
+</ion-content>

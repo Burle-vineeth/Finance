@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -31,8 +31,6 @@ export class Tab3Page implements OnInit {
   private alertController = inject(AlertController);
   private destroyRef = inject(DestroyRef);
 
-  public userRole = this.apiService.userRole;
-
   activeLoans: any[] = [];
   transactions: any[] = [];
   // Loan id -> client name for every loan, so the calendar can say who paid (repayments don't carry the client)
@@ -50,13 +48,6 @@ export class Tab3Page implements OnInit {
   toastColor = 'success';
 
   constructor() {
-    // Auditors can't log payments, so they start on the ledger
-    effect(() => {
-      if (this.userRole() === 'AUDITOR' && this.viewMode === 'collect') {
-        this.viewMode = 'ledger';
-      }
-    });
-
     addIcons({
       'arrow-up-circle': arrowUpCircle, 'arrow-down-circle': arrowDownCircle, 'trash-outline': trashOutline,
       'arrow-down': arrowDown, 'arrow-up': arrowUp, 'receipt-outline': receiptOutline,

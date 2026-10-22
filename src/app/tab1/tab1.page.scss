@@ -1,24 +1,17 @@
-.role-btn {
-  --padding-start: 10px;
-  --padding-end: 12px;
-  --border-radius: 999px;
-  --background: var(--app-surface-2);
-  --color: var(--app-text-2);
-  height: 32px;
-  margin-inline-end: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
+/* Staff collections waiting for approval */
+.approval-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  text-decoration: none;
+  border-color: rgba(var(--ion-color-warning-rgb), 0.45);
+}
 
-  ion-icon {
-    margin-inline-end: 4px;
-    font-size: 1rem;
-  }
-
-  &::part(native) {
-    border-radius: 999px;
-  }
+.approval-chevron {
+  flex: none;
+  font-size: 1.1rem;
+  color: var(--app-text-3);
 }
 
 /* Total equity card */

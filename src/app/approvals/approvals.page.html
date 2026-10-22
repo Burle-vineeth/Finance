@@ -1,0 +1,182 @@
+<ion-header [translucent]="true" class="ion-no-border app-header" mode="md">
+  <ion-toolbar>
+    <ion-title>Approvals</ion-title>
+  </ion-toolbar>
+  <ion-toolbar class="toolbar-seg">
+    <ion-segment [(ngModel)]="view" mode="ios" class="app-seg">
+      <ion-segment-button value="pending">
+        <ion-label>Pending{{ pending.length ? ' (' + pending.length + ')' : '' }}</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="reviewed">
+        <ion-label>Reviewed</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+  @if (isLoading && !pending.length) {
+    <div class="loading-center">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Loading…</span>
+    </div>
+  }
+
+  <!-- Waiting for approval, oldest first -->
+  @if (view === 'pending' && !isLoading) {
+    @if (pending.length) {
+      <div class="app-card queue-summary">
+        <div class="row-main">
+          <div class="kv-label">Reported by staff</div>
+          <div class="queue-total num">{{ pendingTotal | currency:'INR':'symbol':'1.0-2' }}</div>
+          <div class="row-sub">{{ pending.length }} {{ pending.length === 1 ? 'collection' : 'collections' }} · nothing is in the ledger until you approve</div>
+        </div>
+        @if (cleanEntries.length) {
+          <ion-button class="app-btn approve-all" color="success" (click)="confirmApproveAll()" [disabled]="!!bulk || !!busyId">
+            @if (bulk) {
+              <ion-spinner slot="start" name="crescent"></ion-spinner>
+              {{ bulk.done }} / {{ bulk.total }}
+            } @else {
+              <ion-icon slot="start" name="checkmark"></ion-icon>
+              Approve all ({{ cleanEntries.length }})
+            }
+          </ion-button>
+        }
+      </div>
+
+      @for (e of pending; track trackById($index, e); let i = $index) {
+        @if (i === 0 || localDay(e.date) !== localDay(pending[i - 1].date)) {
+          <div class="group-label">{{ e.date | date:'EEE, d MMM y' }}</div>
+        }
+        <div class="app-card entry-card" [class.has-warnings]="e.warnings?.length">
+          <div class="entry-top">
+            <div class="avatar av-{{ (e.client?.name?.charCodeAt(0) + e.client?.name?.charCodeAt(e.client?.name?.length - 1)) % 6 }}">{{ e.client?.name?.charAt(0) || '?' }}</div>
+            <div class="row-main">
+              <div class="row-title">{{ e.client?.name }}</div>
+              <div class="row-sub">By {{ e.submittedBy?.name || 'staff' }} · sent {{ e.createdAt | date:'d MMM, h:mm a' }}</div>
+            </div>
+            <div class="entry-amount num">{{ e.amount | currency:'INR':'symbol':'1.0-2' }}</div>
+          </div>
+
+          @if (e.loan) {
+            <div class="entry-context">
+              Owes {{ e.loan.pendingAmount | currency:'INR':'symbol':'1.0-2' }}
+              · installment {{ e.loan.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-2' }} {{ e.loan.paymentFrequency | lowercase }}
+            </div>
+          }
+
+          @if (e.notes) {
+            <div class="entry-note"><ion-icon name="chatbubble-outline"></ion-icon>{{ e.notes }}</div>
+          }
+
+          @if (e.warnings?.length) {
+            <div class="entry-warnings">
+              @for (w of e.warnings; track w) {
+                <span class="chip" [class.chip-danger]="w === 'LOAN_NOT_ACTIVE'" [class.chip-warning]="w !== 'LOAN_NOT_ACTIVE'">
+                  <ion-icon name="warning-outline"></ion-icon>
+                  @switch (w) {
+                    @case ('MORE_THAN_OWED') { More than the client owes }
+                    @case ('DUPLICATE_ENTRY') { Another entry for this loan that day }
+                    @case ('ALREADY_PAID_THAT_DAY') { A payment is already recorded that day }
+                    @case ('LOAN_NOT_ACTIVE') { Loan is closed – reject this }
+                    @default { {{ w }} }
+                  }
+                </span>
+              }
+            </div>
+          }
+
+          <div class="entry-actions">
+            <ion-button fill="clear" color="danger" size="small" (click)="confirmReject(e)" [disabled]="!!busyId || !!bulk">
+              <ion-icon slot="start" name="close"></ion-icon>
+              Reject
+            </ion-button>
+            <ion-button fill="clear" color="medium" size="small" (click)="openEdit(e)" [disabled]="!!busyId || !!bulk || e.warnings?.includes('LOAN_NOT_ACTIVE')">
+              <ion-icon slot="start" name="create-outline"></ion-icon>
+              Edit
+            </ion-button>
+            <ion-button color="success" size="small" class="approve-btn" (click)="approve(e)" [disabled]="!!busyId || !!bulk || e.warnings?.includes('LOAN_NOT_ACTIVE')">
+              @if (busyId === e._id) {
+                <ion-spinner slot="start" name="crescent"></ion-spinner>
+              } @else {
+                <ion-icon slot="start" name="checkmark"></ion-icon>
+              }
+              Approve
+            </ion-button>
+          </div>
+        </div>
+      }
+    } @else {
+      <app-empty-state icon="checkmark-done-circle-outline" title="All caught up"
+        message="Collections your staff report will appear here for approval."></app-empty-state>
+    }
+  }
+
+  <!-- Already reviewed, newest first -->
+  @if (view === 'reviewed') {
+    @if (reviewed.length) {
+      <div class="app-card list-card">
+        @for (e of reviewed; track trackById($index, e)) {
+          <div class="row reviewed-row">
+            <div class="avatar av-{{ (e.client?.name?.charCodeAt(0) + e.client?.name?.charCodeAt(e.client?.name?.length - 1)) % 6 }}">{{ e.client?.name?.charAt(0) || '?' }}</div>
+            <div class="row-main">
+              <div class="row-title">{{ e.client?.name }}</div>
+              <div class="row-sub">
+                {{ (e.approvedDate || e.date) | date:'d MMM' }} · by {{ e.submittedBy?.name || 'staff' }}
+              </div>
+              @if (e.status === 'APPROVED' && e.approvedAmount !== undefined && e.approvedAmount !== e.amount) {
+                <div class="row-meta">Reported {{ e.amount | currency:'INR':'symbol':'1.0-2' }}, recorded {{ e.approvedAmount | currency:'INR':'symbol':'1.0-2' }}</div>
+              }
+              @if (e.status === 'REJECTED' && e.rejectionReason) {
+                <div class="row-meta reason">“{{ e.rejectionReason }}”</div>
+              }
+            </div>
+            <div class="row-end">
+              <div class="row-amount" [class.pos]="e.status === 'APPROVED'">{{ (e.approvedAmount ?? e.amount) | currency:'INR':'symbol':'1.0-2' }}</div>
+              @switch (e.status) {
+                @case ('APPROVED') { <span class="chip chip-success">Approved</span> }
+                @case ('REJECTED') { <span class="chip chip-danger">Rejected</span> }
+                @case ('CANCELLED') { <span class="chip">Withdrawn</span> }
+                @case ('REVERSED') { <span class="chip chip-warning">Undone</span> }
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <app-empty-state icon="checkmark-done-circle-outline" title="Nothing reviewed yet"
+        message="Approved and rejected collections will be listed here."></app-empty-state>
+    }
+  }
+
+  <!-- Correct the amount or date, then approve -->
+  <ion-modal [isOpen]="!!editing" (didDismiss)="closeEdit()" class="edit-dialog">
+    <ng-template>
+      @if (editing) {
+        <div class="edit-body">
+          <h3>Edit before approving</h3>
+          <p class="edit-sub">
+            {{ editing.client?.name }} · {{ editing.submittedBy?.name || 'Staff' }} reported
+            {{ editing.amount | currency:'INR':'symbol':'1.0-2' }} on {{ editing.date | date:'d MMM' }}
+          </p>
+          <ion-item lines="none" class="field">
+            <ion-input label="Amount to record" labelPlacement="stacked" type="text" inputmode="decimal"
+              [(ngModel)]="editAmount"></ion-input>
+          </ion-item>
+          <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="editDate" [max]="maxDate"
+            (ionChange)="onEditDate($event.detail.value)"></ion-datetime>
+          <div class="edit-actions">
+            <ion-button fill="clear" color="medium" (click)="closeEdit()">Cancel</ion-button>
+            <ion-button color="success" (click)="approveEdited()" [disabled]="!(editAmountValue > 0)">
+              Approve {{ editAmountValue > 0 ? (editAmountValue | currency:'INR':'symbol':'1.0-2') : '' }}
+            </ion-button>
+          </div>
+        </div>
+      }
+    </ng-template>
+  </ion-modal>
+
+  <ion-toast [isOpen]="showToast" [message]="toastMessage" [duration]="2500" [color]="toastColor"
+    (didDismiss)="showToast = false"></ion-toast>
+</ion-content>

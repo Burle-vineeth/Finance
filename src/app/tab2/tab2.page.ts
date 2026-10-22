@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, effect, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -31,8 +31,6 @@ export class Tab2Page implements OnInit {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
-
-  public userRole = this.apiService.userRole;
 
   viewMode: 'forms' | 'clients' | 'capital' | 'loans' = 'forms';
 
@@ -118,12 +116,6 @@ export class Tab2Page implements OnInit {
   toastColor = 'success';
 
   constructor() {
-    effect(() => {
-      if (this.userRole() === 'AUDITOR' && this.viewMode === 'forms') {
-        this.viewMode = 'clients';
-      }
-    });
-
     addIcons({ 
       'arrow-up-circle': arrowUpCircle, 
       'arrow-down-circle': arrowDownCircle,

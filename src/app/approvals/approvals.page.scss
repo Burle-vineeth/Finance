@@ -1,0 +1,163 @@
+.queue-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* These lines carry times and explanations; let them wrap instead of cutting them off */
+.queue-summary .row-sub,
+.entry-top .row-sub {
+  white-space: normal;
+}
+
+.queue-total {
+  margin: 2px 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--app-text);
+}
+
+.approve-all {
+  flex: none;
+  height: 44px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.entry-card {
+  padding: 14px 14px 8px;
+
+  &.has-warnings {
+    border-color: rgba(var(--ion-color-warning-rgb), 0.55);
+  }
+}
+
+.entry-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.entry-amount {
+  flex: none;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--app-text);
+}
+
+.entry-context {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+}
+
+.entry-note {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: var(--app-text);
+  background: var(--app-surface-2);
+
+  ion-icon {
+    flex: none;
+    margin-top: 2px;
+    color: var(--app-text-3);
+  }
+}
+
+.entry-warnings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+
+  .chip {
+    white-space: normal;
+  }
+}
+
+.entry-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--app-border);
+
+  ion-button {
+    margin: 0;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .approve-btn {
+    --border-radius: 10px;
+    --box-shadow: none;
+    margin-left: 4px;
+  }
+}
+
+.reviewed-row {
+  align-items: flex-start;
+
+  .row-end {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .reason {
+    color: var(--app-neg);
+    white-space: normal;
+  }
+}
+
+/* Edit before approving */
+ion-modal.edit-dialog {
+  --width: min(360px, calc(100vw - 32px));
+  --height: fit-content;
+  --border-radius: 22px;
+}
+
+.edit-body {
+  padding: 18px 16px 12px;
+  background: var(--app-surface);
+  color: var(--app-text);
+
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  ion-datetime {
+    width: 100%;
+    --background: var(--app-surface);
+    --background-rgb: var(--app-surface-rgb);
+  }
+}
+
+.edit-sub {
+  margin: 4px 0 14px;
+  font-size: 0.82rem;
+  color: var(--app-text-2);
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+
+  ion-button {
+    margin: 0;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}

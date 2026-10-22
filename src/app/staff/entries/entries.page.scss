@@ -1,0 +1,45 @@
+.entry-row {
+  align-items: flex-start;
+
+  .row-sub {
+    white-space: normal;
+  }
+
+  .row-end {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+
+.status-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.status-meta {
+  font-size: 0.75rem;
+  color: var(--app-text-3);
+}
+
+.status-note {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+  white-space: normal;
+
+  &.reason {
+    color: var(--app-neg);
+  }
+}
+
+.withdraw-btn {
+  margin: 4px -8px 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}

@@ -4,11 +4,9 @@
   </ion-toolbar>
   <ion-toolbar class="toolbar-seg">
     <ion-segment [(ngModel)]="viewMode" mode="ios" class="app-seg">
-      @if (userRole() === 'ADMIN') {
-        <ion-segment-button value="forms">
-          <ion-label>Forms</ion-label>
-        </ion-segment-button>
-      }
+      <ion-segment-button value="forms">
+        <ion-label>Forms</ion-label>
+      </ion-segment-button>
       <ion-segment-button value="clients">
         <ion-label>Clients</ion-label>
       </ion-segment-button>
@@ -25,7 +23,7 @@
 <ion-content [fullscreen]="true" class="ion-padding">
 
   <!-- FORMS -->
-  @if (viewMode === 'forms' && userRole() === 'ADMIN') {
+  @if (viewMode === 'forms') {
     <!-- Capital & expenses -->
     <div class="app-card">
       <div class="card-head">

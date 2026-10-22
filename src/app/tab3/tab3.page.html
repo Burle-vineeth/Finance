@@ -4,11 +4,9 @@
   </ion-toolbar>
   <ion-toolbar class="toolbar-seg">
     <ion-segment [(ngModel)]="viewMode" mode="ios" class="app-seg">
-      @if (userRole() === 'ADMIN') {
-        <ion-segment-button value="collect">
-          <ion-label>Log payment</ion-label>
-        </ion-segment-button>
-      }
+      <ion-segment-button value="collect">
+        <ion-label>Log payment</ion-label>
+      </ion-segment-button>
       <ion-segment-button value="calendar">
         <ion-label>Calendar</ion-label>
       </ion-segment-button>
@@ -22,7 +20,7 @@
 <ion-content [fullscreen]="true" class="ion-padding">
 
   <!-- Log a repayment -->
-  @if (viewMode === 'collect' && userRole() === 'ADMIN') {
+  @if (viewMode === 'collect') {
     <div class="app-card">
       <div class="card-head">
         <div class="icon-tile tile-in"><ion-icon name="arrow-down"></ion-icon></div>
@@ -93,14 +91,12 @@
   }
 
   <!-- Ledger, grouped by day -->
-  @if (viewMode === 'ledger' || (viewMode === 'collect' && userRole() === 'AUDITOR')) {
+  @if (viewMode === 'ledger') {
     @if (transactions.length > 0) {
-      @if (userRole() === 'ADMIN') {
-        <p class="swipe-hint">
-          <ion-icon name="swap-horizontal-outline"></ion-icon>
-          Swipe a repayment or expense to the left to undo it
-        </p>
-      }
+      <p class="swipe-hint">
+        <ion-icon name="swap-horizontal-outline"></ion-icon>
+        Swipe a repayment or expense to the left to undo it
+      </p>
       <ion-list class="plain-list">
         @for (t of transactions; track trackById($index, t); let i = $index, last = $last) {
           @let day = t.date | date:'yyyy-MM-dd';
@@ -124,7 +120,7 @@
               <div class="row-main">
                 <div class="row-title">{{ formatType(t.type) }}</div>
                 @if (t.client?.name) {
-                  <div class="row-sub">{{ t.client.name }}</div>
+                  <div class="row-sub">{{ t.client.name }}@if (t.collectedBy?.name) { · by {{ t.collectedBy.name }}}</div>
                 } @else if (t.notes && t.type !== 'REPAYMENT' && t.type !== 'DISBURSEMENT') {
                   <div class="row-sub">{{ t.notes }}</div>
                 }
@@ -145,7 +141,7 @@
               </div>
             </ion-item>
 
-            @if ((t.type === 'REPAYMENT' || t.type === 'BUSINESS_EXPENSE') && userRole() === 'ADMIN') {
+            @if (t.type === 'REPAYMENT' || t.type === 'BUSINESS_EXPENSE') {
               <ion-item-options side="end">
                 <ion-item-option color="danger" (click)="confirmDeleteTransaction(t._id)">
                   @if (deletingId === t._id) {
