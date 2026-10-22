@@ -1,0 +1,90 @@
+<div class="cal-head">
+  <ion-button fill="clear" size="small" (click)="shiftMonth(-1)" aria-label="Previous month">
+    <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+  </ion-button>
+  <div class="cal-title">
+    <div class="cal-month">{{ month() | date:'MMMM y' }}</div>
+    <div class="cal-sum">
+      @if (grid().count > 0) {
+        <span class="pos">{{ grid().total | currency:'INR':'symbol':'1.0-0' }}</span>
+        · {{ grid().count }} {{ grid().count === 1 ? 'payment' : 'payments' }}
+      } @else {
+        No payments this month
+      }
+    </div>
+  </div>
+  <ion-button fill="clear" size="small" (click)="shiftMonth(1)" aria-label="Next month">
+    <ion-icon slot="icon-only" name="chevron-forward"></ion-icon>
+  </ion-button>
+</div>
+
+<div class="cal-grid">
+  @for (w of weekdays; track $index) {
+    <div class="cal-wd">{{ w }}</div>
+  }
+  @for (c of grid().days; track c.key; let first = $first) {
+    <button type="button" class="cal-day lvl-{{ c.level }}"
+      [class.today]="c.isToday"
+      [class.selected]="c.key === selectedKey()"
+      [style.grid-column-start]="first ? grid().offset + 1 : null"
+      [attr.aria-label]="(c.key | date:'d MMMM') + (c.total > 0 ? ', ' + (c.total | currency:'INR':'symbol':'1.0-0') + ' collected' : '')"
+      (click)="select(c.key)">
+      <span class="cal-num">{{ c.day }}</span>
+      @if (c.total > 0) {
+        <span class="cal-amt">{{ compact(c.total) }}</span>
+      }
+      @if (c.markers.length) {
+        <span class="cal-mark"></span>
+      }
+    </button>
+  }
+</div>
+
+<div class="cal-legend">
+  @if (heatmap()) {
+    <span class="cal-scale">Less <i class="sw lvl-1"></i><i class="sw lvl-2"></i><i class="sw lvl-3"></i><i class="sw lvl-4"></i> More</span>
+  } @else {
+    <span><i class="sw lvl-4"></i>Paid</span>
+  }
+  @if (grid().markerLegend) {
+    <span><i class="sw sw-mark"></i>{{ grid().markerLegend }}</span>
+  }
+  @if (!isCurrentMonth()) {
+    <button type="button" class="cal-today-btn" (click)="goToToday()">Today</button>
+  }
+</div>
+
+@if (selectedDay(); as d) {
+  <div class="cal-detail">
+    <div class="cal-detail-head">
+      <span>{{ d.key | date:'EEE, d MMM y' }}</span>
+      @if (d.total > 0) {
+        <span class="pos">{{ d.total | currency:'INR':'symbol':'1.0-2' }}</span>
+      }
+    </div>
+    @for (label of d.markers; track $index) {
+      <div class="cal-note"><i class="sw sw-mark"></i>{{ label }}</div>
+    }
+    @for (t of d.payments; track t._id) {
+      <div class="row cal-row">
+        <div class="icon-tile tile-in"><ion-icon name="arrow-down"></ion-icon></div>
+        <div class="row-main">
+          <div class="row-title">{{ paymentTitle(t) }}</div>
+          <div class="row-sub">
+            @if (t.profitPortion > 0) {
+              Profit {{ t.profitPortion | currency:'INR':'symbol':'1.0-2' }}
+            } @else {
+              Principal
+            }
+          </div>
+        </div>
+        <div class="row-end">
+          <div class="row-amount pos">+{{ t.amount | currency:'INR':'symbol':'1.0-2' }}</div>
+        </div>
+      </div>
+    }
+    @if (!d.payments.length && !d.markers.length) {
+      <div class="cal-empty">No payments on this day</div>
+    }
+  </div>
+}

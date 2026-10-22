@@ -2,16 +2,19 @@ import { Component, OnInit, inject, effect, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { 
-  IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-  IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonList, IonBadge, IonModal, IonButtons, IonAvatar, IonSpinner
+import {
+  IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonItem, IonLabel, IonInput, IonSelect,
+  IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonModal, IonButtons, IonSpinner, IonDatetime
 } from '@ionic/angular/standalone';
 import { finalize } from 'rxjs/operators';
 import { addIcons } from 'ionicons';
-import { arrowUpCircle, arrowDownCircle, documentTextOutline, walletOutline, cashOutline, chevronForward, arrowBack, call } from 'ionicons/icons';
+import {
+  arrowUpCircle, arrowDownCircle, documentTextOutline, walletOutline, cashOutline, chevronForward, arrowBack, call,
+  arrowDown, arrowUp, receiptOutline, personAddOutline, callOutline, locationOutline, calendarOutline
+} from 'ionicons/icons';
 import { ApiService } from '../services/api.service';
 import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
+import { PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
 
 @Component({
   selector: 'app-tab2',
@@ -19,10 +22,9 @@ import { EmptyStateComponent } from '../components/empty-state/empty-state.compo
   styleUrls: ['tab2.page.scss'],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
-    IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-    IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-    IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonList, IonBadge, IonModal, IonButtons, IonAvatar, IonSpinner,
-    EmptyStateComponent
+    IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonItem, IonLabel, IonInput, IonSelect,
+    IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonModal, IonButtons, IonSpinner, IonDatetime,
+    EmptyStateComponent, PaymentCalendarComponent
   ]
 })
 export class Tab2Page implements OnInit {
@@ -53,6 +55,7 @@ export class Tab2Page implements OnInit {
 
   selectedLoan: any = null;
   isModalOpen = false;
+  historyView: 'calendar' | 'list' = 'calendar';
 
   openLoanDetails(loan: any) {
     this.selectedLoan = loan;
@@ -129,7 +132,14 @@ export class Tab2Page implements OnInit {
       'cash-outline': cashOutline,
       'chevron-forward': chevronForward,
       'arrow-back': arrowBack,
-      'call': call
+      'call': call,
+      'arrow-down': arrowDown,
+      'arrow-up': arrowUp,
+      'receipt-outline': receiptOutline,
+      'person-add-outline': personAddOutline,
+      'call-outline': callOutline,
+      'location-outline': locationOutline,
+      'calendar-outline': calendarOutline
     });
 
     this.clientForm = this.fb.group({

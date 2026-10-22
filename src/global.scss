@@ -42,3 +42,616 @@ ion-button ion-spinner {
   height: 18px;
   margin-inline-end: 8px;
 }
+
+/* ==========================================================================
+ * Shared UI building blocks. Colours come from the tokens in theme/variables.scss,
+ * so everything here works in light and dark mode.
+ * ========================================================================== */
+
+ion-content {
+  --background: var(--app-bg);
+  --color: var(--app-text);
+}
+
+/* Page header: same colour as the page, no bar or shadow */
+ion-header.app-header ion-toolbar {
+  --background: var(--app-bg);
+  --color: var(--app-text);
+  --border-width: 0 !important;
+}
+
+ion-header.app-header ion-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+ion-header.app-header .toolbar-seg {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-bottom: 8px;
+}
+
+/* Segmented control (always the pill style, whatever the platform) */
+ion-segment.app-seg {
+  --background: var(--app-surface-2);
+  width: 100%;
+  border-radius: 12px;
+
+  ion-segment-button {
+    --indicator-color: var(--app-raised);
+    --indicator-box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14);
+    --color: var(--app-text-2);
+    --color-checked: var(--app-text);
+    --border-radius: 9px;
+    min-height: 36px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+ion-segment.app-seg.seg-inline {
+  margin-bottom: 14px;
+}
+
+/* Small segment that sits next to a section title */
+ion-segment.app-seg.seg-mini {
+  flex: none;
+  width: 176px;
+
+  ion-segment-button {
+    min-height: 30px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Cards */
+.app-card {
+  display: block;
+  margin: 0 0 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
+  color: var(--app-text);
+}
+
+ion-card.app-card {
+  --background: var(--app-surface);
+  --color: var(--app-text);
+}
+
+.app-card.list-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--app-text);
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+    color: var(--app-text-2);
+  }
+}
+
+.section-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 22px 4px 10px;
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--app-text);
+  }
+
+  span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--app-text-3);
+  }
+}
+
+.section-label:first-child {
+  margin-top: 4px;
+}
+
+.section-label.with-control {
+  align-items: center;
+}
+
+/* Text helpers */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--app-text-2);
+}
+
+/* Rows inside a list card */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--app-border);
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--app-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row-sub {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+.row-end {
+  flex: none;
+  text-align: right;
+}
+
+.row-amount {
+  font-size: 0.98rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text);
+}
+
+.row-meta {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--app-text-3);
+}
+
+/* Rows built from ion-item (ledger, loan history) */
+ion-item.row-item {
+  --background: var(--app-surface);
+  --color: var(--app-text);
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --min-height: 64px;
+  --border-width: 0;
+  --inner-border-width: 0;
+  --border-color: var(--app-border);
+
+  .icon-tile {
+    margin-inline-end: 12px;
+  }
+}
+
+/* Consecutive rows that form one rounded group (ledger days) */
+ion-item-sliding.g-row,
+ion-item.g-row {
+  display: block;
+  overflow: hidden;
+  border-left: 1px solid var(--app-border);
+  border-right: 1px solid var(--app-border);
+
+  &.first {
+    border-top: 1px solid var(--app-border);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+
+  &.last {
+    border-bottom: 1px solid var(--app-border);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+  }
+
+  &:not(.last) ion-item,
+  &:not(.last).row-item {
+    --inner-border-width: 0 0 1px 0;
+  }
+
+  &.last ion-item,
+  &.last.row-item {
+    --inner-border-width: 0;
+  }
+}
+
+.group-label {
+  margin: 18px 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--app-text-3);
+}
+
+.group-label:first-child {
+  margin-top: 4px;
+}
+
+ion-list.plain-list {
+  padding: 0;
+  background: transparent;
+}
+
+/* Square icon tiles, coloured by what the money did */
+.icon-tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  font-size: 1.15rem;
+  color: var(--app-info);
+  background: rgba(var(--ion-color-primary-rgb), 0.1);
+}
+
+.tile-in {
+  color: var(--app-pos);
+  background: rgba(var(--ion-color-success-rgb), 0.12);
+}
+
+.tile-out {
+  color: var(--app-neg);
+  background: rgba(var(--ion-color-danger-rgb), 0.1);
+}
+
+.tile-capital {
+  color: var(--app-info);
+  background: rgba(var(--ion-color-primary-rgb), 0.1);
+}
+
+.tile-withdraw {
+  color: var(--app-warn);
+  background: rgba(var(--ion-color-warning-rgb), 0.16);
+}
+
+.tile-expense {
+  color: var(--app-violet);
+  background: rgba(var(--ion-color-tertiary-rgb), 0.12);
+}
+
+/* Letter avatars; av-0 … av-5 picked from the first letter of the name */
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--av-fg, var(--app-info));
+  background: var(--av-bg, rgba(var(--ion-color-primary-rgb), 0.1));
+}
+
+.av-0 { --av-fg: #2563eb; --av-bg: rgba(37, 99, 235, 0.12); }
+.av-1 { --av-fg: #7c3aed; --av-bg: rgba(124, 58, 237, 0.12); }
+.av-2 { --av-fg: #15803d; --av-bg: rgba(22, 163, 74, 0.13); }
+.av-3 { --av-fg: #b45309; --av-bg: rgba(245, 158, 11, 0.16); }
+.av-4 { --av-fg: #be185d; --av-bg: rgba(219, 39, 119, 0.12); }
+.av-5 { --av-fg: #0f766e; --av-bg: rgba(20, 184, 166, 0.14); }
+
+@media (prefers-color-scheme: dark) {
+  .av-0 { --av-fg: #8fb0ff; }
+  .av-1 { --av-fg: #c4b0ff; }
+  .av-2 { --av-fg: #6ee79a; }
+  .av-3 { --av-fg: #fcd060; }
+  .av-4 { --av-fg: #f9a8d4; }
+  .av-5 { --av-fg: #5eead4; }
+}
+
+/* Small status pills */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--app-text-2);
+  background: var(--app-surface-2);
+
+  ion-icon {
+    font-size: 0.9rem;
+  }
+}
+
+.chip-success { color: var(--app-pos); background: rgba(var(--ion-color-success-rgb), 0.12); }
+.chip-warning { color: var(--app-warn); background: rgba(var(--ion-color-warning-rgb), 0.16); }
+.chip-tertiary,
+.chip-info { color: var(--app-info); background: rgba(var(--ion-color-primary-rgb), 0.1); }
+.chip-danger { color: var(--app-neg); background: rgba(var(--ion-color-danger-rgb), 0.11); }
+
+/* Progress bar: <div class="bar"><span [style.width.%]="…"></span></div> */
+.bar {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--app-surface-2);
+
+  > span {
+    display: block;
+    height: 100%;
+    max-width: 100%;
+    border-radius: inherit;
+    background: var(--ion-color-primary);
+    transition: width 0.4s ease;
+  }
+
+  &.bar-success > span {
+    background: var(--ion-color-success);
+  }
+}
+
+/* Label / value tiles */
+.kv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.kv {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--app-surface-2);
+}
+
+.kv-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--app-text-2);
+}
+
+.kv-value {
+  margin-top: 2px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text);
+}
+
+/* Form fields: a filled, rounded box with the label stacked on top */
+ion-item.field {
+  --background: var(--app-surface-2);
+  --border-radius: 12px;
+  --padding-start: 14px;
+  --inner-padding-end: 14px;
+  --min-height: 58px;
+  --highlight-height: 0;
+  --color: var(--app-text);
+  margin-bottom: 10px;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  transition: border-color 0.15s ease;
+
+  &.item-has-focus {
+    border-color: var(--ion-color-primary);
+  }
+
+  ion-input,
+  ion-select {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  ion-input .label-text-wrapper {
+    color: var(--app-text-2);
+    font-weight: 600;
+  }
+
+  ion-select::part(label) {
+    color: var(--app-text-2);
+    font-weight: 600;
+  }
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Date fields: look like the other fields, open a calendar when tapped */
+ion-item.date-field {
+  --background-hover: var(--app-surface-2);
+  --background-activated: var(--app-surface-2);
+  --ripple-color: var(--ion-color-primary);
+  cursor: pointer;
+
+  .date-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 10px 0 9px;
+  }
+
+  .date-label {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--app-text-2);
+  }
+
+  .date-value {
+    margin-top: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--app-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &.is-empty {
+      color: var(--app-text-3);
+    }
+  }
+
+  .date-icon {
+    margin: 0 0 0 8px;
+    font-size: 1.15rem;
+    color: var(--app-text-2);
+  }
+}
+
+/* Calendar card opened by a date field */
+ion-modal.date-dialog {
+  --width: fit-content;
+  --height: fit-content;
+  --border-radius: 22px;
+  --box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+
+  ion-datetime {
+    width: 330px;
+    min-height: 330px;
+    --background: var(--app-surface);
+    --background-rgb: var(--app-surface-rgb);
+    --title-color: var(--app-text-2);
+    color: var(--app-text);
+  }
+}
+
+.form-hint {
+  margin: 2px 2px 6px;
+  font-size: 0.8rem;
+  color: var(--app-warn);
+}
+
+ion-button.app-btn {
+  --border-radius: 12px;
+  --box-shadow: none;
+  height: 50px;
+  margin: 8px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Inline messages */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+
+  ion-icon {
+    flex: none;
+    margin-top: 1px;
+    font-size: 1.2rem;
+  }
+}
+
+.banner-error {
+  color: var(--app-neg);
+  background: rgba(var(--ion-color-danger-rgb), 0.1);
+}
+
+.banner-info {
+  color: var(--app-text-2);
+  background: rgba(var(--ion-color-primary-rgb), 0.07);
+
+  ion-icon {
+    color: var(--app-info);
+  }
+
+  strong {
+    color: var(--app-text);
+  }
+}
+
+.loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 60vh;
+  color: var(--app-text-2);
+}
+
+/* Bottom tab bar */
+ion-tab-bar {
+  --background: var(--app-surface);
+  --border: 1px solid var(--app-border);
+  --color: var(--app-text-3);
+  --color-selected: var(--ion-color-primary);
+  height: 64px;
+}
+
+ion-tab-button {
+  font-weight: 600;
+
+  ion-icon {
+    padding: 3px 18px;
+    border-radius: 999px;
+    transition: background-color 0.2s ease;
+  }
+
+  ion-label {
+    margin-top: 3px;
+    font-size: 0.72rem;
+  }
+
+  &.tab-selected ion-icon {
+    background: rgba(var(--ion-color-primary-rgb), 0.12);
+  }
+}
+
+ion-toast {
+  --border-radius: 12px;
+}
+
+/* Money in / out text colours. Kept last so they win over the generic text colours above. */
+.pos {
+  color: var(--app-pos);
+}
+
+.neg {
+  color: var(--app-neg);
+}

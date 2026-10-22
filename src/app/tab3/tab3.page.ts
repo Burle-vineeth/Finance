@@ -1,16 +1,17 @@
-import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, effect, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { 
-  IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-  IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonItemDivider, IonSpinner,
+import {
+  IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonSelect,
+  IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonSpinner, IonModal, IonDatetime,
   AlertController
 } from '@ionic/angular/standalone';
 import { finalize } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
-import { arrowUpCircle, arrowDownCircle, trashOutline } from 'ionicons/icons';
+import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
+import { PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
+import { arrowUpCircle, arrowDownCircle, trashOutline, arrowDown, arrowUp, receiptOutline, informationCircleOutline, swapHorizontalOutline, walletOutline, calendarOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 
 @Component({
@@ -19,9 +20,9 @@ import { addIcons } from 'ionicons';
   styleUrls: ['tab3.page.scss'],
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
-    IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-    IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect, 
-    IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonItemGroup, IonItemDivider, IonSpinner
+    IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonSelect,
+    IonSelectOption, IonButton, IonIcon, IonToast, IonList, IonSegment, IonSegmentButton, IonItemSliding, IonItemOptions, IonItemOption, IonSpinner, IonModal, IonDatetime,
+    EmptyStateComponent, PaymentCalendarComponent
   ]
 })
 export class Tab3Page implements OnInit {
@@ -34,9 +35,11 @@ export class Tab3Page implements OnInit {
 
   activeLoans: any[] = [];
   transactions: any[] = [];
+  // Loan id -> client name for every loan, so the calendar can say who paid (repayments don't carry the client)
+  loanNames: Record<string, string> = {};
   
   repaymentForm: FormGroup;
-  viewMode: 'collect' | 'ledger' = 'collect';
+  viewMode: 'collect' | 'calendar' | 'ledger' = 'collect';
 
   // Set while a request is running so a second tap can't send it again
   isSavingRepayment = false;
@@ -47,7 +50,19 @@ export class Tab3Page implements OnInit {
   toastColor = 'success';
 
   constructor() {
-    addIcons({ 'arrow-up-circle': arrowUpCircle, 'arrow-down-circle': arrowDownCircle, 'trash-outline': trashOutline });
+    // Auditors can't log payments, so they start on the ledger
+    effect(() => {
+      if (this.userRole() === 'AUDITOR' && this.viewMode === 'collect') {
+        this.viewMode = 'ledger';
+      }
+    });
+
+    addIcons({
+      'arrow-up-circle': arrowUpCircle, 'arrow-down-circle': arrowDownCircle, 'trash-outline': trashOutline,
+      'arrow-down': arrowDown, 'arrow-up': arrowUp, 'receipt-outline': receiptOutline,
+      'information-circle-outline': informationCircleOutline, 'swap-horizontal-outline': swapHorizontalOutline,
+      'wallet-outline': walletOutline, 'calendar-outline': calendarOutline
+    });
     this.repaymentForm = this.fb.group({
       loan: ['', Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
@@ -76,6 +91,9 @@ export class Tab3Page implements OnInit {
   loadActiveLoans() {
     this.apiService.getLoans().subscribe({
       next: (res) => {
+        const names: Record<string, string> = {};
+        res.data.forEach((l: any) => names[l._id] = l.client?.name);
+        this.loanNames = names;
         // Filter to only ACTIVE loans
         this.activeLoans = res.data.filter((l: any) => l.status === 'ACTIVE');
       },

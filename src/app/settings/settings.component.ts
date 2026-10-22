@@ -1,9 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { 
-  IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, IonItem, IonInput, IonButton, IonIcon, IonToast, IonButtons, IonBackButton, IonSpinner
+import {
+  IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonInput, IonButton, IonIcon, IonToast, IonButtons, IonBackButton, IonSpinner
 } from '@ionic/angular/standalone';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
@@ -15,8 +14,7 @@ import { addIcons } from 'ionicons';
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-    IonCardTitle, IonCardContent, IonItem, IonInput, IonButton, IonIcon, IonToast, IonButtons, IonBackButton, IonSpinner
+    IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonInput, IonButton, IonIcon, IonToast, IonButtons, IonBackButton, IonSpinner
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss']

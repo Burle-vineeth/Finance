@@ -2,14 +2,12 @@ import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { 
-  IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol, IonSpinner, 
-  IonList, IonItem, IonLabel, IonIcon, IonButtons, IonButton
+import {
+  IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonIcon, IonButtons, IonButton
 } from '@ionic/angular/standalone';
 import { ApiService } from '../services/api.service';
 import { addIcons } from 'ionicons';
-import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline, checkmarkCircleOutline, settingsOutline } from 'ionicons/icons';
+import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline, checkmarkCircleOutline, settingsOutline, shieldCheckmarkOutline, eyeOutline, timeOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tab1',
@@ -17,9 +15,7 @@ import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, cale
   styleUrls: ['tab1.page.scss'],
   imports: [
     CommonModule, RouterModule,
-    IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, 
-    IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol, IonSpinner,
-    IonList, IonItem, IonLabel, IonIcon, IonButtons, IonButton
+    IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonIcon, IonButtons, IonButton
   ],
 })
 export class Tab1Page implements OnInit {
@@ -43,7 +39,10 @@ export class Tab1Page implements OnInit {
       'alert-circle-outline': alertCircleOutline,
       'calendar-outline': calendarOutline,
       'checkmark-circle-outline': checkmarkCircleOutline,
-      'settings-outline': settingsOutline
+      'settings-outline': settingsOutline,
+      'shield-checkmark-outline': shieldCheckmarkOutline,
+      'eye-outline': eyeOutline,
+      'time-outline': timeOutline
     });
   }
 

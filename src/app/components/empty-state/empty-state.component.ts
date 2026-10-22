@@ -8,7 +8,7 @@ import { folderOpenOutline } from 'ionicons/icons';
   selector: 'app-empty-state',
   template: `
     <div class="empty-container">
-      <ion-icon [name]="icon"></ion-icon>
+      <div class="empty-icon"><ion-icon [name]="icon"></ion-icon></div>
       <h3>{{ title }}</h3>
       <p>{{ message }}</p>
     </div>
@@ -19,25 +19,31 @@ import { folderOpenOutline } from 'ionicons/icons';
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 3rem 1rem;
+      padding: 2.5rem 1rem;
       text-align: center;
-      color: var(--ion-color-medium);
-      
-      ion-icon {
-        font-size: 48px;
+      color: var(--app-text-2);
+
+      .empty-icon {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
         margin-bottom: 1rem;
-        opacity: 0.5;
+        border-radius: 20px;
+        font-size: 28px;
+        color: var(--app-text-3);
+        background: var(--app-surface-2);
       }
-      
+
       h3 {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin: 0 0 0.5rem 0;
-        color: var(--ion-color-dark);
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0 0 0.35rem 0;
+        color: var(--app-text);
       }
-      
+
       p {
-        font-size: 0.95rem;
+        font-size: 0.875rem;
         margin: 0;
       }
     }

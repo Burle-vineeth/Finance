@@ -1,14 +1,19 @@
-<ion-header [translucent]="true">
-  <ion-toolbar color="primary">
+<ion-header [translucent]="true" class="ion-no-border app-header" mode="md">
+  <ion-toolbar>
     <ion-title>Collections</ion-title>
   </ion-toolbar>
-  <ion-toolbar color="primary" *ngIf="userRole() === 'ADMIN'">
-    <ion-segment [(ngModel)]="viewMode">
-      <ion-segment-button value="collect">
-        <ion-label>Log Payment</ion-label>
+  <ion-toolbar class="toolbar-seg">
+    <ion-segment [(ngModel)]="viewMode" mode="ios" class="app-seg">
+      @if (userRole() === 'ADMIN') {
+        <ion-segment-button value="collect">
+          <ion-label>Log payment</ion-label>
+        </ion-segment-button>
+      }
+      <ion-segment-button value="calendar">
+        <ion-label>Calendar</ion-label>
       </ion-segment-button>
       <ion-segment-button value="ledger">
-        <ion-label>Full Ledger</ion-label>
+        <ion-label>Full ledger</ion-label>
       </ion-segment-button>
     </ion-segment>
   </ion-toolbar>
@@ -16,88 +21,149 @@
 
 <ion-content [fullscreen]="true" class="ion-padding">
 
-  <!-- View Mode: Collect Payment -->
-  <div *ngIf="viewMode === 'collect' && userRole() === 'ADMIN'">
-    <ion-card class="form-card highlight-card">
-      <ion-card-header>
-        <ion-card-title>Log a Repayment</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <form [formGroup]="repaymentForm" (ngSubmit)="onLogRepayment()">
-          
-          <ion-item lines="full">
-            <ion-select label="Select Active Loan" formControlName="loan" placeholder="Choose...">
-              <ion-select-option *ngFor="let loan of activeLoans" [value]="loan._id">
+  <!-- Log a repayment -->
+  @if (viewMode === 'collect' && userRole() === 'ADMIN') {
+    <div class="app-card">
+      <div class="card-head">
+        <div class="icon-tile tile-in"><ion-icon name="arrow-down"></ion-icon></div>
+        <div>
+          <h3>Log a repayment</h3>
+          <p>Money received against an active loan</p>
+        </div>
+      </div>
+      <form [formGroup]="repaymentForm" (ngSubmit)="onLogRepayment()">
+        <ion-item lines="none" class="field">
+          <ion-select label="Active loan" labelPlacement="stacked" formControlName="loan" placeholder="Choose a loan">
+            @for (loan of activeLoans; track trackById($index, loan)) {
+              <ion-select-option [value]="loan._id">
                 {{ loan.client?.name }} (Owes {{ loan.pendingAmount | currency:'INR':'symbol':'1.0-2' }})
               </ion-select-option>
-            </ion-select>
-          </ion-item>
-
-          <ion-item lines="full">
-            <ion-input label="Amount Received" labelPlacement="floating" formControlName="amount" type="text" inputmode="numeric" placeholder="₹100" (ionInput)="formatCurrencyInput($event, repaymentForm, 'amount')"></ion-input>
-          </ion-item>
-
-          <ion-item lines="full">
-            <ion-input label="Date Received" labelPlacement="floating" formControlName="date" type="date"></ion-input>
-          </ion-item>
-
-          <div class="btn-container">
-            <ion-button expand="block" color="success" type="submit" [disabled]="repaymentForm.invalid || activeLoans.length === 0 || isSavingRepayment">
-              <ion-spinner *ngIf="isSavingRepayment" slot="start" name="crescent"></ion-spinner>
-              Log Payment
-            </ion-button>
-          </div>
-        </form>
-      </ion-card-content>
-    </ion-card>
-
-    <h2 class="section-title">Why log here?</h2>
-    <p class="helper-text">
-      When you log a payment here, the backend automatically applies a "Principal First" recovery model, ensuring 100% of the loan's initial principal amount is recovered before any excess funds are counted as Realized Profit.
-    </p>
-  </div>
-
-  <!-- View Mode: Ledger -->
-  <div *ngIf="viewMode === 'ledger' || userRole() === 'AUDITOR'">
-    <ion-list class="transparent-list" *ngIf="transactions.length > 0; else noTransactions">
-      <ion-item-sliding *ngFor="let t of transactions; trackBy: trackById">
-        <ion-item lines="none">
-          <ion-icon 
-            slot="start" 
-            [name]="t.type === 'REPAYMENT' || t.type === 'CAPITAL_INJECTION' ? 'arrow-down-circle' : 'arrow-up-circle'"
-            [color]="t.type === 'REPAYMENT' || t.type === 'CAPITAL_INJECTION' ? 'success' : 'danger'"
-          ></ion-icon>
-          <ion-label>
-            <h2>{{ formatType(t.type) }}</h2>
-            <p *ngIf="t.client">{{ t.client?.name }}</p>
-            <p class="ledger-date">{{ t.date | date:'dd MMM yy' }}</p>
-          </ion-label>
-          <div slot="end" class="transaction-amounts">
-            <span class="main-amount" [class.positive]="t.type === 'REPAYMENT'">
-              {{ t.type === 'REPAYMENT' ? '+' : '-' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
-            </span>
-            <br>
-            <span class="sub-amount" *ngIf="t.type === 'REPAYMENT'">
-              (Profit: {{ t.profitPortion | currency:'INR':'symbol':'1.0-2' }})
-            </span>
-          </div>
+            }
+          </ion-select>
         </ion-item>
-        
-        <ion-item-options side="end" *ngIf="(t.type === 'REPAYMENT' || t.type === 'BUSINESS_EXPENSE') && userRole() === 'ADMIN'">
-          <ion-item-option color="danger" (click)="confirmDeleteTransaction(t._id)">
-            <ion-spinner *ngIf="deletingId === t._id; else trashIcon" slot="icon-only" name="crescent"></ion-spinner>
-            <ng-template #trashIcon>
-              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-            </ng-template>
-          </ion-item-option>
-        </ion-item-options>
-      </ion-item-sliding>
-    </ion-list>
+        <div class="field-row">
+          <ion-item lines="none" class="field">
+            <ion-input label="Amount received" labelPlacement="stacked" formControlName="amount" type="text" inputmode="numeric"
+              placeholder="₹100" (ionInput)="formatCurrencyInput($event, repaymentForm, 'amount')"></ion-input>
+          </ion-item>
+          <ion-item lines="none" class="field date-field" button [detail]="false" id="repayment-date-trigger">
+            <div class="date-text">
+              <span class="date-label">Date received</span>
+              <span class="date-value">{{ repaymentForm.value.date | date:'d MMM y' }}</span>
+            </div>
+            <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+          </ion-item>
+        </div>
+        <!-- Not keepContentsMounted: a calendar kept alive while hidden reopens showing the wrong month's days -->
+        <ion-modal #repaymentDateModal trigger="repayment-date-trigger" class="date-dialog">
+          <ng-template>
+            <ion-datetime mode="ios" presentation="date" locale="en-IN" formControlName="date" [showDefaultTitle]="true"
+              (ionChange)="repaymentDateModal.dismiss()">
+              <span slot="title">Date received</span>
+            </ion-datetime>
+          </ng-template>
+        </ion-modal>
+        @if (activeLoans.length === 0) {
+          <p class="form-hint">There are no active loans to collect from.</p>
+        }
+        <ion-button expand="block" class="app-btn" color="success" type="submit"
+          [disabled]="repaymentForm.invalid || activeLoans.length === 0 || isSavingRepayment">
+          @if (isSavingRepayment) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          }
+          Log payment
+        </ion-button>
+      </form>
+    </div>
 
-    <ng-template #noTransactions>
-      <p class="empty-state">No transactions in the ledger yet.</p>
-    </ng-template>
-  </div>
+    <div class="banner banner-info">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>
+        <strong>Principal first.</strong> Each payment first recovers the loan's principal. Only money beyond
+        the principal counts as realized profit.
+      </span>
+    </div>
+  }
+
+  <!-- Collections across all loans, day by day -->
+  @if (viewMode === 'calendar') {
+    <div class="app-card">
+      <app-payment-calendar [transactions]="transactions" [loanNames]="loanNames" [heatmap]="true"></app-payment-calendar>
+    </div>
+  }
+
+  <!-- Ledger, grouped by day -->
+  @if (viewMode === 'ledger' || (viewMode === 'collect' && userRole() === 'AUDITOR')) {
+    @if (transactions.length > 0) {
+      @if (userRole() === 'ADMIN') {
+        <p class="swipe-hint">
+          <ion-icon name="swap-horizontal-outline"></ion-icon>
+          Swipe a repayment or expense to the left to undo it
+        </p>
+      }
+      <ion-list class="plain-list">
+        @for (t of transactions; track trackById($index, t); let i = $index, last = $last) {
+          @let day = t.date | date:'yyyy-MM-dd';
+          @let firstOfDay = i === 0 || day !== (transactions[i - 1].date | date:'yyyy-MM-dd');
+          @let lastOfDay = last || day !== (transactions[i + 1].date | date:'yyyy-MM-dd');
+          @let moneyIn = t.type === 'REPAYMENT' || t.type === 'CAPITAL_INJECTION';
+
+          @if (firstOfDay) {
+            <div class="group-label">{{ t.date | date:'EEE, d MMM y' }}</div>
+          }
+          <ion-item-sliding class="g-row" [class.first]="firstOfDay" [class.last]="lastOfDay">
+            <ion-item class="row-item">
+              <div slot="start" class="icon-tile"
+                [class.tile-in]="t.type === 'REPAYMENT'"
+                [class.tile-out]="t.type === 'DISBURSEMENT'"
+                [class.tile-capital]="t.type === 'CAPITAL_INJECTION'"
+                [class.tile-withdraw]="t.type === 'CAPITAL_WITHDRAWAL'"
+                [class.tile-expense]="t.type === 'BUSINESS_EXPENSE'">
+                <ion-icon [name]="t.type === 'BUSINESS_EXPENSE' ? 'receipt-outline' : (moneyIn ? 'arrow-down' : 'arrow-up')"></ion-icon>
+              </div>
+              <div class="row-main">
+                <div class="row-title">{{ formatType(t.type) }}</div>
+                @if (t.client?.name) {
+                  <div class="row-sub">{{ t.client.name }}</div>
+                } @else if (t.notes && t.type !== 'REPAYMENT' && t.type !== 'DISBURSEMENT') {
+                  <div class="row-sub">{{ t.notes }}</div>
+                }
+              </div>
+              <div slot="end" class="row-end">
+                <div class="row-amount" [class.pos]="moneyIn">
+                  {{ moneyIn ? '+' : '−' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
+                </div>
+                @if (t.type === 'REPAYMENT') {
+                  <div class="row-meta">
+                    @if (t.profitPortion > 0) {
+                      Profit {{ t.profitPortion | currency:'INR':'symbol':'1.0-2' }}
+                    } @else {
+                      Principal
+                    }
+                  </div>
+                }
+              </div>
+            </ion-item>
+
+            @if ((t.type === 'REPAYMENT' || t.type === 'BUSINESS_EXPENSE') && userRole() === 'ADMIN') {
+              <ion-item-options side="end">
+                <ion-item-option color="danger" (click)="confirmDeleteTransaction(t._id)">
+                  @if (deletingId === t._id) {
+                    <ion-spinner slot="icon-only" name="crescent"></ion-spinner>
+                  } @else {
+                    <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                  }
+                </ion-item-option>
+              </ion-item-options>
+            }
+          </ion-item-sliding>
+        }
+      </ion-list>
+    } @else {
+      <app-empty-state icon="wallet-outline" title="Ledger is empty"
+        message="No transactions in the ledger yet."></app-empty-state>
+    }
+  }
 
   <!-- Toast for notifications -->
   <ion-toast
