@@ -17,6 +17,7 @@ export interface LoanSchedule {
   paidUntil: string | null;
   dueSoFar: number;
   amountDue: number;
+  aheadAmount: number;
   overdueBeforeToday: number;
   unpaidInstallments: number;
   installmentToday: number;
@@ -58,7 +59,7 @@ export function dueBadge(s: LoanSchedule | null | undefined): DueBadge {
     case 'DUE_TODAY':
       return { label: `Due today · ${rupees(s.amountDue)}`, chip: 'chip-warning', icon: 'alert-circle-outline', toCollect: true };
     case 'PAID_AHEAD':
-      return { label: `Paid up to ${shortDate(s.paidUntil!)}`, chip: 'chip-success', icon: 'checkmark-done-circle-outline', toCollect: false };
+      return { label: `Paid up to ${shortDate(s.paidUntil!)} · ${rupees(s.aheadAmount ?? 0)} extra`, chip: 'chip-success', icon: 'checkmark-done-circle-outline', toCollect: false };
     case 'UP_TO_DATE':
       return s.paidToday > 0
         ? { label: `Collected · next due ${when(s.nextDueDate!)}`, chip: 'chip-success', icon: 'checkmark-circle-outline', toCollect: false }

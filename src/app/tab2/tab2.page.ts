@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule, formatDate } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonItem, IonLabel, IonInput, IonSelect,
   IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonModal, IonButtons, IonSpinner, IonDatetime
@@ -13,7 +13,7 @@ import {
   arrowDown, arrowUp, receiptOutline, personAddOutline, callOutline, locationOutline, calendarOutline,
   alertCircleOutline, checkmarkCircleOutline, checkmarkDoneCircleOutline, createOutline
 } from 'ionicons/icons';
-import { ApiService } from '../services/api.service';
+import { ApiService, LoanEdit } from '../services/api.service';
 import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
 import { PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
 import { slideUpEnter, slideDownLeave } from '../utils/modal-animations';
@@ -155,9 +155,16 @@ export class Tab2Page implements OnInit {
       principalAmount: ['', [Validators.required, Validators.min(1)]],
       expectedReturnAmount: ['', [Validators.required, Validators.min(1)]],
       paymentFrequency: ['DAILY', Validators.required],
-      durationDays: ['', [Validators.required, Validators.min(1)]],
+      durationDays: ['', [Validators.min(1)]],
+      // Set by hand, or left blank to be worked out from the duration; one of the two is needed
+      installment: [''],
       startDate: [localToday(), Validators.required],
       collectionStartDate: [''],
+    }, {
+      validators: (group: AbstractControl) => {
+        const { installment, durationDays } = group.value;
+        return String(installment ?? '').replace(/,/g, '') || durationDays ? null : { installmentOrDuration: true };
+      }
     });
 
     this.capitalForm = this.fb.group({
@@ -266,6 +273,11 @@ export class Tab2Page implements OnInit {
     const payload = { ...this.loanForm.value };
     payload.principalAmount = Number(String(payload.principalAmount).replace(/,/g, ''));
     payload.expectedReturnAmount = Number(String(payload.expectedReturnAmount).replace(/,/g, ''));
+    // Leave out what wasn't filled in: no installment means "work it out", no duration means "until repaid"
+    const installment = String(payload.installment ?? '').replace(/,/g, '');
+    if (installment) payload.installment = Number(installment); else delete payload.installment;
+    if (payload.durationDays === '' || payload.durationDays === null || payload.durationDays === undefined) delete payload.durationDays;
+    else payload.durationDays = Number(payload.durationDays);
 
     this.isSavingLoan = true;
     this.apiService.addLoan(payload).pipe(
@@ -275,6 +287,7 @@ export class Tab2Page implements OnInit {
         this.displayToast('Loan disbursed successfully!');
         this.loanForm.reset({ 
           paymentFrequency: 'DAILY',
+          installment: '',
           startDate: localToday(),
           collectionStartDate: ''
         });
@@ -287,6 +300,54 @@ export class Tab2Page implements OnInit {
         this.displayToast(msg, 'danger');
       }
     });
+  }
+
+  periodName(frequency: string): string {
+    return frequency === 'WEEKLY' ? 'week' : frequency === 'MONTHLY' ? 'month' : 'day';
+  }
+
+  /** What the loan form will create, worked out as the server does (it checks again when saving) */
+  get loanPlanHint(): { text: string; warn: boolean } | null {
+    const v = this.loanForm.value;
+    return this.planHint(this.toNumber(v.expectedReturnAmount), this.toNumber(v.installment), Number(v.durationDays) || 0,
+      v.paymentFrequency, 'Set an installment, a duration, or both.');
+  }
+
+  /** The same for the installment in Edit loan details */
+  get editPlanHint(): { text: string; warn: boolean } | null {
+    const loan = this.editingLoan;
+    if (!loan) return null;
+    return this.planHint(loan.expectedReturnAmount, this.toNumber(this.editForm.installment), Number(this.editForm.durationDays) || 0,
+      loan.paymentFrequency, 'A loan without a duration needs an installment.');
+  }
+
+  private toNumber(value: any): number {
+    return Number(String(value ?? '').replace(/,/g, '')) || 0;
+  }
+
+  // The installments a loan gets from its expected return, installment (0: none set) and duration (0: none)
+  private planHint(expected: number, installment: number, days: number, frequency: string, blankText: string): { text: string; warn: boolean } | null {
+    if (!expected) return null;
+    const period = this.periodName(frequency);
+    const rupees = (amount: number) => `₹${amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    const count = !days ? 0 : frequency === 'WEEKLY' ? Math.ceil(days / 7) : frequency === 'MONTHLY' ? Math.ceil(days / 30) : days;
+
+    if (installment > 0) {
+      if (installment > expected) return { text: 'The installment can\'t be more than the expected return.', warn: true };
+      if (count && installment * count < expected - 0.005) {
+        const needed = Math.ceil((expected / count) * 100) / 100;
+        return { text: `Too small for ${days} days: needs at least ${rupees(needed)} per ${period}.`, warn: true };
+      }
+      const full = Math.floor((expected + 0.005) / installment);
+      const remainder = Math.round((expected - full * installment) * 100) / 100;
+      const total = remainder >= 1 ? full + 1 : full;
+      const last = remainder >= 1 ? `, the last ${rupees(remainder)}` : '';
+      return { text: `${total} installments of ${rupees(installment)} per ${period}${last}${days ? '' : ' · runs until repaid'}.`, warn: false };
+    }
+    if (count) {
+      return { text: `${rupees(Math.round((expected / count) * 100) / 100)} per ${period}, worked out from ${days} days (${count} installments).`, warn: false };
+    }
+    return { text: blankText, warn: true };
   }
 
   formatCurrencyInput(event: any, formGroup: FormGroup, controlName: string) {
@@ -312,14 +373,17 @@ export class Tab2Page implements OnInit {
 
   // --- Correct a loan's details: client, disbursement date, collection start date ---
   editingLoan: any = null;
-  editForm = { client: '', startDate: '', collectionStartDate: '' };
+  editForm = { client: '', startDate: '', collectionStartDate: '', installment: '', durationDays: '' as string | number };
+  private editDurationAtOpen = '';
+  // The installment as the form opened, to send it only when it was changed
+  private editInstallmentAtOpen = '';
   // The server's review of the edit: what changes, and the loan's schedule before and after
   editPreview: any = null;
   isPreviewingEdit = false;
   isSavingEdit = false;
   readonly maxDate = localToday();
   readonly editFieldLabels: Record<string, string> = {
-    client: 'Client', startDate: 'Disbursement date', collectionStartDate: 'Collection start date',
+    client: 'Client', startDate: 'Disbursement date', collectionStartDate: 'Collection start date', installment: 'Installment', durationDays: 'Tenure',
   };
 
   openEdit() {
@@ -330,7 +394,11 @@ export class Tab2Page implements OnInit {
       client: loan.client?._id || '',
       startDate: localDay(loan.startDate),
       collectionStartDate: loan.collectionStartDate ? localDay(loan.collectionStartDate) : '',
+      installment: loan.expectedDailyMonthlyPayment ? Number(loan.expectedDailyMonthlyPayment).toLocaleString('en-IN') : '',
+      durationDays: loan.durationDays ? String(loan.durationDays) : '',
     };
+    this.editDurationAtOpen = String(this.editForm.durationDays);
+    this.editInstallmentAtOpen = this.editForm.installment;
     this.editPreview = null;
   }
 
@@ -339,12 +407,32 @@ export class Tab2Page implements OnInit {
     this.editPreview = null;
   }
 
-  private editChanges() {
-    return {
+  private editChanges(): LoanEdit {
+    const changes: LoanEdit = {
       client: this.editForm.client,
       startDate: this.editForm.startDate,
       collectionStartDate: this.editForm.collectionStartDate || null,
     };
+    // Only a changed installment is sent: blank means "work it out from the duration" again
+    if (this.editForm.installment !== this.editInstallmentAtOpen) {
+      const amount = String(this.editForm.installment).replace(/,/g, '');
+      changes.installment = amount ? Number(amount) : '';
+    }
+    // Tenure too, only when changed: blank means the loan runs until repaid
+    const days = String(this.editForm.durationDays ?? '').trim();
+    if (days !== this.editDurationAtOpen) changes.durationDays = days ? Number(days) : '';
+    return changes;
+  }
+
+  formatEditInstallment(event: any) {
+    const digits = String(event.target.value ?? '').replace(/[^0-9]/g, '');
+    this.editForm.installment = digits ? Number(digits).toLocaleString('en-IN') : '';
+  }
+
+  /** How a changed value reads in the review and the history */
+  changeText(field: string, value: string): string {
+    if (field === 'client' || field === 'installment' || field === 'durationDays') return value || 'none';
+    return value ? formatDate(value, 'd MMM y', 'en-IN') : 'not set';
   }
 
   reviewEdit() {

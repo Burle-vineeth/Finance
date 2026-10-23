@@ -4,6 +4,15 @@ import { Observable, Subject } from 'rxjs';
 import { tap, finalize, share } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
+/** What can be corrected on a loan. installment: an amount sets it; '' works it out from the duration again */
+export interface LoanEdit {
+  client?: string;
+  startDate?: string;
+  collectionStartDate?: string | null;
+  installment?: number | '';
+  durationDays?: number | '';
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -69,11 +78,11 @@ export class ApiService {
   }
 
   /** What correcting a loan's details would change (client, disbursement date, collection start), without saving */
-  previewLoanEdit(id: string, changes: { client?: string; startDate?: string; collectionStartDate?: string | null }): Observable<any> {
+  previewLoanEdit(id: string, changes: LoanEdit): Observable<any> {
     return this.http.patch(`${this.baseUrl}/loans/${id}`, { ...changes, dryRun: true });
   }
 
-  updateLoan(id: string, changes: { client?: string; startDate?: string; collectionStartDate?: string | null }): Observable<any> {
+  updateLoan(id: string, changes: LoanEdit): Observable<any> {
     return this.http.patch(`${this.baseUrl}/loans/${id}`, changes).pipe(
       tap(() => this.notifyDataChanged())
     );

@@ -71,6 +71,16 @@ ion-card.loan-card {
   color: var(--app-info);
 }
 
+.plan-hint {
+  margin: -2px 2px 12px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+
+  &.warn {
+    color: var(--app-warn);
+  }
+}
+
 .card-due {
   margin: -4px 0 12px;
 }
