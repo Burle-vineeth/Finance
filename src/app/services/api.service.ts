@@ -11,6 +11,8 @@ export interface LoanEdit {
   collectionStartDate?: string | null;
   installment?: number | '';
   durationDays?: number | '';
+  // A custom installment plan to set or replace, or null to go back to a tenure and installment
+  customInstallments?: { date: string; amount: number }[] | null;
 }
 
 @Injectable({

@@ -5,7 +5,10 @@ import { formatDate } from '@angular/common';
 export interface LoanSchedule {
   status: 'UPCOMING' | 'UP_TO_DATE' | 'PAID_AHEAD' | 'DUE_TODAY' | 'PARTLY_PAID' | 'OVERDUE' | 'PAID';
   today: string;
+  // On a custom installment plan, the next unpaid installment (plan amounts can differ)
   installment: number;
+  customPlan: boolean;
+  nextInstallmentAmount: number;
   installmentsTotal: number;
   installmentsDue: number;
   installmentsPaid: number;

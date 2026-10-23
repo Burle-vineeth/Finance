@@ -62,7 +62,11 @@
           @if (e.loan) {
             <div class="entry-context">
               Owes {{ e.loan.pendingAmount | currency:'INR':'symbol':'1.0-2' }}
-              · installment {{ e.loan.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-2' }} {{ e.loan.paymentFrequency | lowercase }}
+              @if (e.loan.customPlan) {
+                · custom installment plan
+              } @else {
+                · installment {{ e.loan.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-2' }} {{ e.loan.paymentFrequency | lowercase }}
+              }
             </div>
           }
 

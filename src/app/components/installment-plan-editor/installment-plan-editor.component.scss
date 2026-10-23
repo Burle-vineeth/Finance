@@ -1,0 +1,145 @@
+.plan-fill {
+  padding: 12px 12px 6px;
+  margin-bottom: 10px;
+  border: 1.5px dashed var(--app-border);
+  border-radius: 14px;
+
+  ion-item.field {
+    --background: var(--app-surface);
+  }
+}
+
+.plan-note {
+  margin: -2px 2px 6px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+
+  &.warn {
+    color: var(--app-warn);
+  }
+}
+
+.plan-fill-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+ion-button {
+  margin: 0;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--app-text-2);
+}
+
+.plan-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 6px;
+}
+
+.plan-no {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: right;
+  color: var(--app-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-date,
+.plan-amount {
+  height: 42px;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  background: var(--app-surface-2);
+  color: var(--app-text);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+
+  &.bad {
+    border-color: var(--app-neg);
+  }
+}
+
+.plan-date {
+  padding: 0 10px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.plan-amount {
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+
+  &:focus-within {
+    border-color: var(--ion-color-primary);
+  }
+
+  ion-input {
+    --padding-start: 2px;
+    --padding-end: 8px;
+    min-height: 0;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.plan-rupee {
+  color: var(--app-text-2);
+}
+
+.plan-remove {
+  --padding-start: 4px;
+  --padding-end: 4px;
+}
+
+.plan-add {
+  margin-top: 4px;
+}
+
+.plan-total {
+  margin: 8px 2px 4px;
+  font-size: 0.85rem;
+  color: var(--app-text-2);
+
+  strong {
+    color: var(--app-warn);
+  }
+
+  &.ok {
+    color: var(--app-pos);
+    font-weight: 600;
+  }
+}
+
+.plan-problems {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+  font-size: 0.8rem;
+  color: var(--app-neg);
+
+  li + li {
+    margin-top: 2px;
+  }
+}

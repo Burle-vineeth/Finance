@@ -136,7 +136,18 @@
               (ionInput)="formatCurrencyInput($event, loanForm, 'expectedReturnAmount')"></ion-input>
           </ion-item>
         </div>
-        <div class="field-row">
+        <!-- Regular: an installment and/or a duration. Custom: each installment's date and amount set one by one.
+             No swipe gesture: with it the segment switches as the finger lifts, the form below changes size, and the
+             tap's click then lands on whatever moved under the finger (e.g. opening a calendar). -->
+        <ion-segment formControlName="repayment" mode="ios" class="app-seg repayment-seg" [swipeGesture]="false">
+          <ion-segment-button value="REGULAR">
+            <ion-label>Regular</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="CUSTOM">
+            <ion-label>Custom installments</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+        <div class="field-row" [class.single]="isCustomPlan">
           <ion-item lines="none" class="field">
             <ion-select label="Frequency" labelPlacement="stacked" formControlName="paymentFrequency">
               <ion-select-option value="DAILY">Daily</ion-select-option>
@@ -144,20 +155,24 @@
               <ion-select-option value="MONTHLY">Monthly</ion-select-option>
             </ion-select>
           </ion-item>
-          <ion-item lines="none" class="field">
-            <ion-input label="Duration (optional)" labelPlacement="stacked" formControlName="durationDays" type="number"
-              inputmode="numeric" placeholder="Days, e.g. 100"></ion-input>
-          </ion-item>
+          @if (!isCustomPlan) {
+            <ion-item lines="none" class="field">
+              <ion-input label="Duration (optional)" labelPlacement="stacked" formControlName="durationDays" type="number"
+                inputmode="numeric" placeholder="Days, e.g. 100"></ion-input>
+            </ion-item>
+          }
         </div>
-        <ion-item lines="none" class="field">
-          <ion-input [label]="'Installment per ' + periodName(loanForm.value.paymentFrequency)" labelPlacement="stacked"
-            formControlName="installment" type="text" inputmode="numeric" placeholder="Leave blank to work it out from the duration"
-            (ionInput)="formatCurrencyInput($event, loanForm, 'installment')"></ion-input>
-        </ion-item>
-        @if (loanPlanHint; as hint) {
-          <p class="plan-hint" [class.warn]="hint.warn">{{ hint.text }}</p>
+        @if (!isCustomPlan) {
+          <ion-item lines="none" class="field">
+            <ion-input [label]="'Installment per ' + periodName(loanForm.value.paymentFrequency)" labelPlacement="stacked"
+              formControlName="installment" type="text" inputmode="numeric" placeholder="Leave blank to work it out from the duration"
+              (ionInput)="formatCurrencyInput($event, loanForm, 'installment')"></ion-input>
+          </ion-item>
+          @if (loanPlanHint; as hint) {
+            <p class="plan-hint" [class.warn]="hint.warn">{{ hint.text }}</p>
+          }
         }
-        <div class="field-row">
+        <div class="field-row" [class.single]="isCustomPlan">
           <ion-item lines="none" class="field date-field" button [detail]="false" id="loan-start-date-trigger">
             <div class="date-text">
               <span class="date-label">Disbursed on</span>
@@ -165,7 +180,8 @@
             </div>
             <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
           </ion-item>
-          <ion-item lines="none" class="field date-field" button [detail]="false" id="loan-collection-date-trigger">
+          <!-- Hidden rather than removed with a custom plan, so its calendar stays attached -->
+          <ion-item lines="none" class="field date-field" button [detail]="false" id="loan-collection-date-trigger" [hidden]="isCustomPlan">
             <div class="date-text">
               <span class="date-label">Collection start</span>
               @if (loanForm.value.collectionStartDate) {
@@ -195,11 +211,14 @@
             </ion-datetime>
           </ng-template>
         </ion-modal>
+        @if (isCustomPlan) {
+          <app-installment-plan-editor [(rows)]="newPlan" [expected]="toNumber(loanForm.value.expectedReturnAmount)"
+            [startDate]="newLoanStart" [frequency]="loanForm.value.paymentFrequency"></app-installment-plan-editor>
+        }
         @if (clients.length === 0) {
           <p class="form-hint">Add a client first to disburse a loan.</p>
         }
-        <ion-button expand="block" class="app-btn" color="success" type="submit"
-          [disabled]="loanForm.invalid || clients.length === 0 || isSavingLoan">
+        <ion-button expand="block" class="app-btn" color="success" type="submit" [disabled]="!canDisburse">
           @if (isSavingLoan) {
             <ion-spinner slot="start" name="crescent"></ion-spinner>
           }
@@ -303,7 +322,11 @@
               <div class="avatar av-{{ (l.client?.name?.charCodeAt(0) + l.client?.name?.charCodeAt(l.client?.name?.length - 1)) % 6 }}">{{ l.client?.name?.charAt(0) || 'U' }}</div>
               <div class="row-main">
                 <div class="row-title">{{ l.client?.name }}</div>
-                <div class="row-sub num">{{ l.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-0' }} · {{ l.paymentFrequency | lowercase }}</div>
+                @if (l.customInstallments?.length) {
+                  <div class="row-sub">Custom plan · {{ l.customInstallments.length }} installments</div>
+                } @else {
+                  <div class="row-sub num">{{ l.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-0' }} · {{ l.paymentFrequency | lowercase }}</div>
+                }
               </div>
               @if (l.status !== 'ACTIVE') {
                 <span class="chip"
@@ -428,14 +451,31 @@
               <div class="kv-label">Repayments</div>
               <div class="kv-value">{{ getRepaymentCount(l._id) }}</div>
             </div>
-            <div class="kv">
-              <div class="kv-label">Installment</div>
-              <div class="kv-value">{{ l.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-2' }}</div>
-            </div>
-            <div class="kv">
-              <div class="kv-label">Tenure</div>
-              <div class="kv-value">{{ l.durationDays ? l.durationDays + ' days' : 'Until repaid' }}</div>
-            </div>
+            @if (l.customInstallments?.length) {
+              <div class="kv">
+                <div class="kv-label">{{ l.schedule?.nextInstallmentAmount ? 'Next installment' : 'Installments' }}</div>
+                <div class="kv-value">
+                  @if (l.schedule?.nextInstallmentAmount) {
+                    {{ l.schedule.nextInstallmentAmount | currency:'INR':'symbol':'1.0-2' }}
+                  } @else {
+                    Custom plan
+                  }
+                </div>
+              </div>
+              <div class="kv">
+                <div class="kv-label">Tenure</div>
+                <div class="kv-value">Custom plan</div>
+              </div>
+            } @else {
+              <div class="kv">
+                <div class="kv-label">Installment</div>
+                <div class="kv-value">{{ l.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-2' }}</div>
+              </div>
+              <div class="kv">
+                <div class="kv-label">Tenure</div>
+                <div class="kv-value">{{ l.durationDays ? l.durationDays + ' days' : 'Until repaid' }}</div>
+              </div>
+            }
             <div class="kv">
               <div class="kv-label">Running for</div>
               <div class="kv-value">{{ getLoanDurationString(l) }}</div>
@@ -461,6 +501,41 @@
               </div>
             }
           </div>
+
+          @if (l.customInstallments?.length) {
+            @let planRows = planProgressOf(l);
+            <div class="section-label with-control">
+              <h2>Installment plan</h2>
+              @if (planRows.length > 12) {
+                <ion-button fill="clear" size="small" class="plan-toggle" (click)="showWholePlan = !showWholePlan">
+                  {{ showWholePlan ? 'Show fewer' : 'Show all ' + planRows.length }}
+                </ion-button>
+              }
+            </div>
+            <div class="app-card list-card plan-list">
+              @for (p of visiblePlanRows(l); track p.number) {
+                <div class="row plan-item">
+                  <div class="plan-num">{{ p.number }}</div>
+                  <div class="row-main">
+                    <div class="row-title num">{{ p.amount | currency:'INR':'symbol':'1.0-2' }}</div>
+                    <div class="row-sub">{{ p.date | date:'EEE, d MMM y' }}</div>
+                  </div>
+                  <div class="row-end">
+                    @switch (p.state) {
+                      @case ('paid') { <span class="chip chip-success">Paid</span> }
+                      @case ('overdue') { <span class="chip chip-danger">Overdue</span> }
+                      @case ('due') { <span class="chip chip-warning">Due today</span> }
+                      @case ('part') { <span class="chip chip-info">Part paid</span> }
+                      @default { <span class="chip">Upcoming</span> }
+                    }
+                    @if (p.state !== 'paid' && p.paid > 0) {
+                      <div class="row-meta">{{ p.paid | currency:'INR':'symbol':'1.0-2' }} paid</div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
 
           @if (l.editHistory?.length) {
             <div class="section-label"><h2>Change history</h2></div>
@@ -498,7 +573,7 @@
             <div class="app-card">
               <app-payment-calendar
                 [transactions]="getLoanTransactions(l._id)"
-                [markers]="[{ date: l.startDate, label: 'Disbursed' }, { date: l.collectionStartDate, label: 'Collection start' }]">
+                [markers]="calendarMarkers(l)">
               </app-payment-calendar>
             </div>
           } @else if (getLoanTransactions(l._id).length > 0) {
@@ -532,7 +607,7 @@
     </ng-template>
   </ion-modal>
 
-  <!-- Correct a loan's details (client and dates; amounts and terms can't be changed) -->
+  <!-- Correct a loan's details: client, dates, tenure and installment, or a custom installment plan (amounts can't be changed) -->
   <ion-modal [isOpen]="!!editingLoan" (didDismiss)="closeEdit()" class="edit-loan-dialog">
     <ng-template>
       @if (editingLoan) {
@@ -547,7 +622,7 @@
                 }
               </ion-select>
             </ion-item>
-            <div class="field-row">
+            <div class="field-row" [class.single]="editMode === 'CUSTOM'">
               <ion-item lines="none" class="field date-field" button [detail]="false" id="edit-loan-start-trigger">
                 <div class="date-text">
                   <span class="date-label">Disbursed on</span>
@@ -555,7 +630,8 @@
                 </div>
                 <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
               </ion-item>
-              <ion-item lines="none" class="field date-field" button [detail]="false" id="edit-loan-collection-trigger">
+              <!-- Hidden rather than removed with a custom plan, so its calendar stays attached -->
+              <ion-item lines="none" class="field date-field" button [detail]="false" id="edit-loan-collection-trigger" [hidden]="editMode === 'CUSTOM'">
                 <div class="date-text">
                   <span class="date-label">Collection start</span>
                   @if (editForm.collectionStartDate) {
@@ -582,23 +658,37 @@
                 </ion-datetime>
               </ng-template>
             </ion-modal>
-            <div class="field-row">
-              <ion-item lines="none" class="field">
-                <ion-input label="Tenure (days)" labelPlacement="stacked" type="number" inputmode="numeric"
-                  [(ngModel)]="editForm.durationDays" placeholder="Until repaid" class="edit-tenure"></ion-input>
-              </ion-item>
-              <ion-item lines="none" class="field">
-                <ion-input [label]="'Installment per ' + periodName(editingLoan.paymentFrequency)" labelPlacement="stacked"
-                  type="text" inputmode="numeric" [(ngModel)]="editForm.installment" (ionInput)="formatEditInstallment($event)"
-                  [placeholder]="editForm.durationDays ? 'From tenure' : 'Needed'" class="edit-installment"></ion-input>
-              </ion-item>
-            </div>
-            @if (editPlanHint; as hint) {
-              <p class="plan-hint" [class.warn]="hint.warn">{{ hint.text }}</p>
+            <!-- No swipe gesture, so switching happens on the click (see the loan form's segment) -->
+            <ion-segment [(ngModel)]="editMode" mode="ios" class="app-seg repayment-seg" [swipeGesture]="false">
+              <ion-segment-button value="REGULAR">
+                <ion-label>Regular</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="CUSTOM">
+                <ion-label>Custom installments</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+            @if (editMode === 'REGULAR') {
+              <div class="field-row">
+                <ion-item lines="none" class="field">
+                  <ion-input label="Tenure (days)" labelPlacement="stacked" type="number" inputmode="numeric"
+                    [(ngModel)]="editForm.durationDays" placeholder="Until repaid" class="edit-tenure"></ion-input>
+                </ion-item>
+                <ion-item lines="none" class="field">
+                  <ion-input [label]="'Installment per ' + periodName(editingLoan.paymentFrequency)" labelPlacement="stacked"
+                    type="text" inputmode="numeric" [(ngModel)]="editForm.installment" (ionInput)="formatEditInstallment($event)"
+                    [placeholder]="editForm.durationDays ? 'From tenure' : 'Needed'" class="edit-installment"></ion-input>
+                </ion-item>
+              </div>
+              @if (editPlanHint; as hint) {
+                <p class="plan-hint" [class.warn]="hint.warn">{{ hint.text }}</p>
+              }
+            } @else {
+              <app-installment-plan-editor [(rows)]="editPlan" [expected]="editingLoan.expectedReturnAmount"
+                [startDate]="editForm.startDate" [frequency]="editingLoan.paymentFrequency"></app-installment-plan-editor>
             }
             <div class="edit-actions">
               <ion-button fill="clear" color="medium" (click)="closeEdit()">Cancel</ion-button>
-              <ion-button color="primary" (click)="reviewEdit()" [disabled]="!editForm.client || !editForm.startDate || isPreviewingEdit">
+              <ion-button color="primary" (click)="reviewEdit()" [disabled]="!editForm.client || !editForm.startDate || !editPlanOk || isPreviewingEdit">
                 @if (isPreviewingEdit) {
                   <ion-spinner slot="start" name="crescent"></ion-spinner>
                 }
@@ -628,13 +718,21 @@
                   <div class="kv-label">Now</div>
                   <span class="chip {{ editPreview.badges.before.chip }}">{{ editPreview.badges.before.label }}</span>
                   <div class="row-meta">First due {{ editPreview.schedule.before.firstDueDate | date:'d MMM y' }}</div>
-                  <div class="row-meta">{{ editPreview.schedule.before.installmentsTotal }} × {{ editPreview.schedule.before.installment | currency:'INR':'symbol':'1.0-2' }}</div>
+                  @if (editPreview.schedule.before.customPlan) {
+                    <div class="row-meta">{{ editPreview.schedule.before.installmentsTotal }} custom installments</div>
+                  } @else {
+                    <div class="row-meta">{{ editPreview.schedule.before.installmentsTotal }} × {{ editPreview.schedule.before.installment | currency:'INR':'symbol':'1.0-2' }}</div>
+                  }
                 </div>
                 <div class="kv">
                   <div class="kv-label">After saving</div>
                   <span class="chip {{ editPreview.badges.after.chip }}">{{ editPreview.badges.after.label }}</span>
                   <div class="row-meta">First due {{ editPreview.schedule.after.firstDueDate | date:'d MMM y' }}</div>
-                  <div class="row-meta">{{ editPreview.schedule.after.installmentsTotal }} × {{ editPreview.schedule.after.installment | currency:'INR':'symbol':'1.0-2' }}</div>
+                  @if (editPreview.schedule.after.customPlan) {
+                    <div class="row-meta">{{ editPreview.schedule.after.installmentsTotal }} custom installments</div>
+                  } @else {
+                    <div class="row-meta">{{ editPreview.schedule.after.installmentsTotal }} × {{ editPreview.schedule.after.installment | currency:'INR':'symbol':'1.0-2' }}</div>
+                  }
                 </div>
               </div>
             }

@@ -145,7 +145,7 @@
             <div class="avatar av-{{ (loan.clientName?.charCodeAt(0) + loan.clientName?.charCodeAt(loan.clientName?.length - 1)) % 6 }}">{{ loan.clientName?.charAt(0) }}</div>
             <div class="row-main">
               <div class="row-title">{{ loan.clientName }}</div>
-              <div class="row-sub num">{{ loan.expectedPayment | currency:'INR':'symbol':'1.0-2' }} · {{ loan.frequency | lowercase }}</div>
+              <div class="row-sub num">{{ loan.expectedPayment | currency:'INR':'symbol':'1.0-2' }} · {{ loan.schedule?.customPlan ? 'next, custom plan' : (loan.frequency | lowercase) }}</div>
               <span class="chip {{ loan.badge.chip }} due-chip">
                 <ion-icon [name]="loan.badge.icon"></ion-icon>
                 {{ loan.badge.label }}
