@@ -2,3 +2,46 @@
   max-width: 600px;
   margin: 0 auto;
 }
+
+.me-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px 12px 14px;
+}
+
+.sign-out,
+.add-staff {
+  flex: none;
+  margin: 0;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.team-row {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 1;
+  }
+}
+
+.row-more {
+  flex: none;
+  font-size: 1.1rem;
+  color: var(--app-text-3);
+}
+
+.team-hint {
+  margin: -4px 4px 0;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+}

@@ -4,11 +4,9 @@
   </ion-toolbar>
   <ion-toolbar class="toolbar-seg">
     <ion-segment [(ngModel)]="viewMode" mode="ios" class="app-seg">
-      @if (userRole() === 'ADMIN') {
-        <ion-segment-button value="forms">
-          <ion-label>Forms</ion-label>
-        </ion-segment-button>
-      }
+      <ion-segment-button value="forms">
+        <ion-label>Forms</ion-label>
+      </ion-segment-button>
       <ion-segment-button value="clients">
         <ion-label>Clients</ion-label>
       </ion-segment-button>
@@ -25,7 +23,7 @@
 <ion-content [fullscreen]="true" class="ion-padding">
 
   <!-- FORMS -->
-  @if (viewMode === 'forms' && userRole() === 'ADMIN') {
+  @if (viewMode === 'forms') {
     <!-- Capital & expenses -->
     <div class="app-card">
       <div class="card-head">
@@ -147,10 +145,18 @@
             </ion-select>
           </ion-item>
           <ion-item lines="none" class="field">
-            <ion-input label="Duration (days)" labelPlacement="stacked" formControlName="durationDays" type="number"
-              inputmode="numeric" placeholder="30"></ion-input>
+            <ion-input label="Duration (optional)" labelPlacement="stacked" formControlName="durationDays" type="number"
+              inputmode="numeric" placeholder="Days, e.g. 100"></ion-input>
           </ion-item>
         </div>
+        <ion-item lines="none" class="field">
+          <ion-input [label]="'Installment per ' + periodName(loanForm.value.paymentFrequency)" labelPlacement="stacked"
+            formControlName="installment" type="text" inputmode="numeric" placeholder="Leave blank to work it out from the duration"
+            (ionInput)="formatCurrencyInput($event, loanForm, 'installment')"></ion-input>
+        </ion-item>
+        @if (loanPlanHint; as hint) {
+          <p class="plan-hint" [class.warn]="hint.warn">{{ hint.text }}</p>
+        }
         <div class="field-row">
           <ion-item lines="none" class="field date-field" button [detail]="false" id="loan-start-date-trigger">
             <div class="date-text">
@@ -299,11 +305,18 @@
                 <div class="row-title">{{ l.client?.name }}</div>
                 <div class="row-sub num">{{ l.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-0' }} · {{ l.paymentFrequency | lowercase }}</div>
               </div>
-              <span class="chip"
-                [class.chip-info]="l.status === 'ACTIVE'"
-                [class.chip-success]="l.status === 'CLOSED'"
-                [class.chip-danger]="l.status === 'DEFAULTED'">{{ l.status | titlecase }}</span>
+              @if (l.status !== 'ACTIVE') {
+                <span class="chip"
+                  [class.chip-success]="l.status === 'CLOSED'"
+                  [class.chip-danger]="l.status === 'DEFAULTED'">{{ l.status | titlecase }}</span>
+              }
             </div>
+            @if (l.due?.label) {
+              <span class="chip {{ l.due.chip }} card-due">
+                <ion-icon [name]="l.due.icon"></ion-icon>
+                {{ l.due.label }}
+              </span>
+            }
 
             <div class="progress-text">
               <span><strong class="pos num">{{ l.totalRepaid | currency:'INR':'symbol':'1.0-0' }}</strong> collected</span>
@@ -340,7 +353,7 @@
     (didDismiss)="showToast = false"></ion-toast>
 
   <!-- Loan details -->
-  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeLoanDetails()">
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeLoanDetails()" [enterAnimation]="slideUpEnter" [leaveAnimation]="slideDownLeave">
     <ng-template>
       <ion-header class="ion-no-border app-header" mode="md">
         <ion-toolbar>
@@ -350,6 +363,12 @@
             </ion-button>
           </ion-buttons>
           <ion-title>Loan details</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="openEdit()" class="edit-loan-btn">
+              <ion-icon slot="start" name="create-outline"></ion-icon>
+              Edit
+            </ion-button>
+          </ion-buttons>
         </ion-toolbar>
       </ion-header>
       @if (selectedLoan) {
@@ -380,6 +399,18 @@
             </div>
           </div>
 
+          @if (l.due?.label) {
+            <div class="app-card due-card">
+              <span class="chip {{ l.due.chip }}">
+                <ion-icon [name]="l.due.icon"></ion-icon>
+                {{ l.due.label }}
+              </span>
+              @if (l.schedule.unpaidInstallments > 1) {
+                <span class="due-meta">{{ l.schedule.unpaidInstallments }} installments unpaid</span>
+              }
+            </div>
+          }
+
           <div class="kv-grid detail-grid">
             <div class="kv">
               <div class="kv-label">Disbursed</div>
@@ -402,7 +433,11 @@
               <div class="kv-value">{{ l.expectedDailyMonthlyPayment | currency:'INR':'symbol':'1.0-2' }}</div>
             </div>
             <div class="kv">
-              <div class="kv-label">Duration</div>
+              <div class="kv-label">Tenure</div>
+              <div class="kv-value">{{ l.durationDays ? l.durationDays + ' days' : 'Until repaid' }}</div>
+            </div>
+            <div class="kv">
+              <div class="kv-label">Running for</div>
               <div class="kv-value">{{ getLoanDurationString(l) }}</div>
             </div>
             <div class="kv">
@@ -415,7 +450,38 @@
                 <div class="kv-value">{{ l.collectionStartDate | date:'dd MMM yy' }}</div>
               </div>
             }
+            @if (l.schedule) {
+              <div class="kv">
+                <div class="kv-label">Installments paid</div>
+                <div class="kv-value">{{ l.schedule.installmentsPaid }} of {{ l.schedule.installmentsTotal }}</div>
+              </div>
+              <div class="kv">
+                <div class="kv-label">{{ l.schedule.hasTerm ? (l.schedule.termEnded ? 'Term ended' : 'Term ends') : 'Repaid by (on schedule)' }}</div>
+                <div class="kv-value" [class.neg]="l.schedule.termEnded">{{ l.schedule.lastDueDate | date:'dd MMM yy' }}</div>
+              </div>
+            }
           </div>
+
+          @if (l.editHistory?.length) {
+            <div class="section-label"><h2>Change history</h2></div>
+            <div class="app-card list-card">
+              @for (h of l.editHistory.slice().reverse(); track $index) {
+                <div class="row history-row">
+                  <div class="row-main">
+                    <div class="row-meta">{{ h.at | date:'d MMM y, h:mm a' }} · by {{ h.byName || 'admin' }}</div>
+                    @for (c of h.changes; track c.field) {
+                      <div class="history-change">
+                        <span class="muted">{{ editFieldLabels[c.field] || c.field }}:</span>
+                        {{ changeText(c.field, c.from) }}
+                        →
+                        <strong>{{ changeText(c.field, c.to) }}</strong>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
 
           <div class="section-label with-control">
             <h2>Payments</h2>
@@ -462,6 +528,127 @@
               message="No transactions found for this loan."></app-empty-state>
           }
         </ion-content>
+      }
+    </ng-template>
+  </ion-modal>
+
+  <!-- Correct a loan's details (client and dates; amounts and terms can't be changed) -->
+  <ion-modal [isOpen]="!!editingLoan" (didDismiss)="closeEdit()" class="edit-loan-dialog">
+    <ng-template>
+      @if (editingLoan) {
+        <div class="edit-body">
+          @if (!editPreview) {
+            <h3>Edit loan details</h3>
+            <p class="edit-sub">Amounts and frequency can't be changed here.</p>
+            <ion-item lines="none" class="field">
+              <ion-select label="Client" labelPlacement="stacked" [(ngModel)]="editForm.client" placeholder="Choose a client">
+                @for (client of clients; track trackById($index, client)) {
+                  <ion-select-option [value]="client._id">{{ client.name }}</ion-select-option>
+                }
+              </ion-select>
+            </ion-item>
+            <div class="field-row">
+              <ion-item lines="none" class="field date-field" button [detail]="false" id="edit-loan-start-trigger">
+                <div class="date-text">
+                  <span class="date-label">Disbursed on</span>
+                  <span class="date-value">{{ editForm.startDate | date:'d MMM y' }}</span>
+                </div>
+                <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+              </ion-item>
+              <ion-item lines="none" class="field date-field" button [detail]="false" id="edit-loan-collection-trigger">
+                <div class="date-text">
+                  <span class="date-label">Collection start</span>
+                  @if (editForm.collectionStartDate) {
+                    <span class="date-value">{{ editForm.collectionStartDate | date:'d MMM y' }}</span>
+                  } @else {
+                    <span class="date-value is-empty">Optional</span>
+                  }
+                </div>
+                <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+              </ion-item>
+            </div>
+            <ion-modal #editStartModal trigger="edit-loan-start-trigger" class="date-dialog">
+              <ng-template>
+                <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="editForm.startDate" [max]="maxDate" [showDefaultTitle]="true"
+                  (ionChange)="onEditDate('startDate', $event.detail.value); editStartModal.dismiss()">
+                  <span slot="title">Disbursement date</span>
+                </ion-datetime>
+              </ng-template>
+            </ion-modal>
+            <ion-modal #editCollectionModal trigger="edit-loan-collection-trigger" class="date-dialog">
+              <ng-template>
+                <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="editForm.collectionStartDate" [showClearButton]="true"
+                  (ionChange)="onEditDate('collectionStartDate', $event.detail.value); editCollectionModal.dismiss()">
+                </ion-datetime>
+              </ng-template>
+            </ion-modal>
+            <div class="field-row">
+              <ion-item lines="none" class="field">
+                <ion-input label="Tenure (days)" labelPlacement="stacked" type="number" inputmode="numeric"
+                  [(ngModel)]="editForm.durationDays" placeholder="Until repaid" class="edit-tenure"></ion-input>
+              </ion-item>
+              <ion-item lines="none" class="field">
+                <ion-input [label]="'Installment per ' + periodName(editingLoan.paymentFrequency)" labelPlacement="stacked"
+                  type="text" inputmode="numeric" [(ngModel)]="editForm.installment" (ionInput)="formatEditInstallment($event)"
+                  [placeholder]="editForm.durationDays ? 'From tenure' : 'Needed'" class="edit-installment"></ion-input>
+              </ion-item>
+            </div>
+            @if (editPlanHint; as hint) {
+              <p class="plan-hint" [class.warn]="hint.warn">{{ hint.text }}</p>
+            }
+            <div class="edit-actions">
+              <ion-button fill="clear" color="medium" (click)="closeEdit()">Cancel</ion-button>
+              <ion-button color="primary" (click)="reviewEdit()" [disabled]="!editForm.client || !editForm.startDate || isPreviewingEdit">
+                @if (isPreviewingEdit) {
+                  <ion-spinner slot="start" name="crescent"></ion-spinner>
+                }
+                Review changes
+              </ion-button>
+            </div>
+          } @else {
+            <h3>Review changes</h3>
+            <p class="edit-sub">{{ editingLoan.client?.name }} · the loan's records move with it.</p>
+            <div class="app-card list-card review-list">
+              @for (c of editPreview.changes; track c.field) {
+                <div class="row">
+                  <div class="row-main">
+                    <div class="row-meta">{{ editFieldLabels[c.field] }}</div>
+                    <div class="history-change">
+                      {{ changeText(c.field, c.from) }}
+                      →
+                      <strong>{{ changeText(c.field, c.to) }}</strong>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+            @if (editPreview.badges) {
+              <div class="kv-grid review-grid">
+                <div class="kv">
+                  <div class="kv-label">Now</div>
+                  <span class="chip {{ editPreview.badges.before.chip }}">{{ editPreview.badges.before.label }}</span>
+                  <div class="row-meta">First due {{ editPreview.schedule.before.firstDueDate | date:'d MMM y' }}</div>
+                  <div class="row-meta">{{ editPreview.schedule.before.installmentsTotal }} × {{ editPreview.schedule.before.installment | currency:'INR':'symbol':'1.0-2' }}</div>
+                </div>
+                <div class="kv">
+                  <div class="kv-label">After saving</div>
+                  <span class="chip {{ editPreview.badges.after.chip }}">{{ editPreview.badges.after.label }}</span>
+                  <div class="row-meta">First due {{ editPreview.schedule.after.firstDueDate | date:'d MMM y' }}</div>
+                  <div class="row-meta">{{ editPreview.schedule.after.installmentsTotal }} × {{ editPreview.schedule.after.installment | currency:'INR':'symbol':'1.0-2' }}</div>
+                </div>
+              </div>
+            }
+            <div class="edit-actions">
+              <ion-button fill="clear" color="medium" (click)="editPreview = null">Back</ion-button>
+              <ion-button color="primary" (click)="saveEdit()" [disabled]="isSavingEdit">
+                @if (isSavingEdit) {
+                  <ion-spinner slot="start" name="crescent"></ion-spinner>
+                }
+                Save changes
+              </ion-button>
+            </div>
+          }
+        </div>
       }
     </ng-template>
   </ion-modal>

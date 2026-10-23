@@ -1,7 +1,7 @@
 <ion-header [translucent]="true" class="ion-no-border app-header" mode="md">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/"></ion-back-button>
+      <ion-back-button [defaultHref]="authService.homeUrl()"></ion-back-button>
     </ion-buttons>
     <ion-title>Settings</ion-title>
   </ion-toolbar>
@@ -9,34 +9,89 @@
 
 <ion-content class="ion-padding">
   <div class="settings-wrap">
-    <div class="section-label"><h2>Security</h2></div>
-    <div class="app-card">
-      <div class="card-head">
-        <div class="icon-tile tile-capital"><ion-icon name="key-outline"></ion-icon></div>
-        <div>
-          <h3>Change PIN</h3>
-          <p>Every other device will be signed out</p>
+    @if (authService.user(); as me) {
+      <div class="app-card me-card">
+        <div class="avatar av-{{ (me.name.charCodeAt(0) + me.name.charCodeAt(me.name.length - 1)) % 6 }}">{{ me.name.charAt(0) }}</div>
+        <div class="row-main">
+          <div class="row-title">{{ me.name }}</div>
+          <div class="row-sub">Signed in as {{ me.username }} · {{ me.role === 'ADMIN' ? 'Admin' : 'Staff' }}</div>
         </div>
+        <ion-button fill="clear" color="danger" size="small" class="sign-out" (click)="confirmSignOut()">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          Sign out
+        </ion-button>
       </div>
+    }
 
-      <ion-item lines="none" class="field">
-        <ion-input label="Current PIN" labelPlacement="stacked" type="password" inputmode="numeric"
-          [(ngModel)]="changePinData.oldPin" maxlength="4" placeholder="••••"></ion-input>
-      </ion-item>
-
-      <ion-item lines="none" class="field">
-        <ion-input label="New 4-digit PIN" labelPlacement="stacked" type="password" inputmode="numeric"
-          [(ngModel)]="changePinData.newPin" maxlength="4" placeholder="••••"></ion-input>
-      </ion-item>
-
-      <ion-button expand="block" class="app-btn" color="primary" (click)="onChangePin()"
-        [disabled]="!changePinData.oldPin || changePinData.newPin?.length !== 4 || isChangingPin">
-        @if (isChangingPin) {
-          <ion-spinner slot="start" name="crescent"></ion-spinner>
+    @if (authService.isAdmin()) {
+      <div class="section-label with-control">
+        <h2>Team</h2>
+        <ion-button fill="clear" size="small" class="add-staff" (click)="addStaff()">
+          <ion-icon slot="start" name="person-add-outline"></ion-icon>
+          Add staff
+        </ion-button>
+      </div>
+      <div class="app-card list-card">
+        @for (u of users; track u.id) {
+          <button type="button" class="row team-row" [disabled]="u.role !== 'STAFF'" (click)="manageStaff(u)">
+            <div class="avatar av-{{ (u.name.charCodeAt(0) + u.name.charCodeAt(u.name.length - 1)) % 6 }}">{{ u.name.charAt(0) }}</div>
+            <div class="row-main">
+              <div class="row-title">{{ u.name }}</div>
+              <div class="row-sub">{{ u.username }} · {{ u.role === 'ADMIN' ? 'Admin' : 'Staff' }}</div>
+            </div>
+            @if (!u.active) {
+              <span class="chip chip-danger">Disabled</span>
+            }
+            @if (u.role === 'STAFF') {
+              <ion-icon name="ellipsis-horizontal" class="row-more"></ion-icon>
+            }
+          </button>
+        } @empty {
+          <div class="row"><span class="muted">Loading…</span></div>
         }
-        Change PIN
-      </ion-button>
-    </div>
+      </div>
+      @if (users.length === 1) {
+        <p class="team-hint">Add a staff member so they can record collections for your approval.</p>
+      }
+    }
+
+    <!-- Only the admin changes their own PIN; a staff member's PIN is set by the admin under Team -->
+    @if (authService.isAdmin()) {
+      <div class="section-label"><h2>Security</h2></div>
+      <div class="app-card">
+        <div class="card-head">
+          <div class="icon-tile tile-capital"><ion-icon name="key-outline"></ion-icon></div>
+          <div>
+            <h3>Change PIN</h3>
+            <p>Your other devices will be signed out</p>
+          </div>
+        </div>
+
+        <ion-item lines="none" class="field">
+          <ion-input label="Current PIN" labelPlacement="stacked" type="text" class="pin-mask" inputmode="numeric"
+            autocomplete="off" [(ngModel)]="changePinData.oldPin" maxlength="4" placeholder="Enter current PIN"></ion-input>
+        </ion-item>
+
+        <ion-item lines="none" class="field">
+          <ion-input label="New 4-digit PIN" labelPlacement="stacked" type="text" class="pin-mask" inputmode="numeric"
+            autocomplete="off" [(ngModel)]="changePinData.newPin" maxlength="4" placeholder="Enter new PIN"></ion-input>
+        </ion-item>
+
+        <ion-button expand="block" class="app-btn" color="primary" (click)="onChangePin()"
+          [disabled]="!changePinData.oldPin || changePinData.newPin.length !== 4 || isChangingPin">
+          @if (isChangingPin) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          }
+          Change PIN
+        </ion-button>
+      </div>
+    } @else {
+      <div class="section-label"><h2>Security</h2></div>
+      <div class="banner banner-info">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <span>Your PIN is set by the admin. If you forget it or need a new one, ask the admin to reset it.</span>
+      </div>
+    }
   </div>
 
   <ion-toast

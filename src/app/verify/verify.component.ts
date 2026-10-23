@@ -21,6 +21,7 @@ import { Router } from '@angular/router';
   styleUrls: ['./verify.component.scss']
 })
 export class VerifyComponent {
+  username: string = '';
   pin: string = '';
   errorMsg: string = '';
   isVerifying = false;
@@ -31,23 +32,37 @@ export class VerifyComponent {
     addIcons({ 'lock-closed': lockClosed, 'alert-circle-outline': alertCircleOutline });
   }
 
+  // Ionic can keep this page alive between visits, so empty it every time it is shown (e.g. after signing out)
+  ionViewWillEnter() {
+    this.username = '';
+    this.pin = '';
+    this.errorMsg = '';
+  }
+
   async verify() {
     if (this.isVerifying) return;
     this.errorMsg = '';
     
+    if (!this.username.trim()) {
+      this.errorMsg = 'Enter your username.';
+      return;
+    }
     if (this.pin.length !== 4) {
       this.errorMsg = 'PIN must be exactly 4 digits.';
       return;
     }
 
     this.isVerifying = true;
-    this.authService.verifyPin(this.pin).pipe(
+    this.authService.login(this.username.trim(), this.pin).pipe(
       finalize(() => this.isVerifying = false)
     ).subscribe(result => {
       if (result.success) {
-        this.router.navigate(['/']);
+        this.username = '';
+        this.pin = '';
+        this.router.navigateByUrl(this.authService.homeUrl(), { replaceUrl: true });
       } else {
-        this.errorMsg = result.message || 'Invalid PIN. Please try again.';
+        this.pin = '';
+        this.errorMsg = result.message || 'Wrong username or PIN. Please try again.';
       }
     });
   }

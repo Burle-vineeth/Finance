@@ -3,16 +3,31 @@
     <div class="app-card lock-card">
       <div class="lock-icon"><ion-icon name="lock-closed"></ion-icon></div>
       <h1>Finance Secured</h1>
-      <p class="lock-sub">Enter your 4-digit PIN to unlock the app.</p>
+      <p class="lock-sub">Sign in with your username and 4-digit PIN.</p>
+
+      <ion-item lines="none" class="field">
+        <ion-input
+          label="Username"
+          labelPlacement="stacked"
+          [(ngModel)]="username"
+          autocapitalize="off"
+          autocomplete="off"
+          [spellcheck]="false"
+          placeholder="e.g. admin"></ion-input>
+      </ion-item>
 
       <ion-item lines="none" class="field pin-field">
         <ion-input
-          type="password"
+          type="text"
+          class="pin-mask"
           inputmode="numeric"
+          name="finance-pin"
           [(ngModel)]="pin"
           maxlength="4"
-          placeholder="••••"
-          aria-label="PIN"></ion-input>
+          placeholder="Enter PIN"
+          autocomplete="off"
+          aria-label="PIN"
+          (keyup.enter)="verify()"></ion-input>
       </ion-item>
 
       @if (errorMsg) {
@@ -22,11 +37,11 @@
         </div>
       }
 
-      <ion-button expand="block" class="app-btn" color="primary" (click)="verify()" [disabled]="pin?.length !== 4 || isVerifying">
+      <ion-button expand="block" class="app-btn" color="primary" (click)="verify()" [disabled]="!username.trim() || pin.length !== 4 || isVerifying">
         @if (isVerifying) {
           <ion-spinner slot="start" name="crescent"></ion-spinner>
         }
-        Unlock app
+        Sign in
       </ion-button>
     </div>
   </div>

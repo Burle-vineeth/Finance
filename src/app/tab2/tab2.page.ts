@@ -1,7 +1,7 @@
-import { Component, OnInit, inject, effect, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule, formatDate } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonItem, IonLabel, IonInput, IonSelect,
   IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonModal, IonButtons, IonSpinner, IonDatetime
@@ -10,11 +10,15 @@ import { finalize } from 'rxjs/operators';
 import { addIcons } from 'ionicons';
 import {
   arrowUpCircle, arrowDownCircle, documentTextOutline, walletOutline, cashOutline, chevronForward, arrowBack, call,
-  arrowDown, arrowUp, receiptOutline, personAddOutline, callOutline, locationOutline, calendarOutline
+  arrowDown, arrowUp, receiptOutline, personAddOutline, callOutline, locationOutline, calendarOutline,
+  alertCircleOutline, checkmarkCircleOutline, checkmarkDoneCircleOutline, createOutline
 } from 'ionicons/icons';
-import { ApiService } from '../services/api.service';
+import { ApiService, LoanEdit } from '../services/api.service';
 import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
 import { PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
+import { slideUpEnter, slideDownLeave } from '../utils/modal-animations';
+import { dueBadge } from '../utils/due-status';
+import { localToday, localDay } from '../utils/dates';
 
 @Component({
   selector: 'app-tab2',
@@ -31,8 +35,6 @@ export class Tab2Page implements OnInit {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
-
-  public userRole = this.apiService.userRole;
 
   viewMode: 'forms' | 'clients' | 'capital' | 'loans' = 'forms';
 
@@ -56,6 +58,8 @@ export class Tab2Page implements OnInit {
   selectedLoan: any = null;
   isModalOpen = false;
   historyView: 'calendar' | 'list' = 'calendar';
+  readonly slideUpEnter = slideUpEnter;
+  readonly slideDownLeave = slideDownLeave;
 
   openLoanDetails(loan: any) {
     this.selectedLoan = loan;
@@ -118,12 +122,6 @@ export class Tab2Page implements OnInit {
   toastColor = 'success';
 
   constructor() {
-    effect(() => {
-      if (this.userRole() === 'AUDITOR' && this.viewMode === 'forms') {
-        this.viewMode = 'clients';
-      }
-    });
-
     addIcons({ 
       'arrow-up-circle': arrowUpCircle, 
       'arrow-down-circle': arrowDownCircle,
@@ -139,7 +137,11 @@ export class Tab2Page implements OnInit {
       'person-add-outline': personAddOutline,
       'call-outline': callOutline,
       'location-outline': locationOutline,
-      'calendar-outline': calendarOutline
+      'calendar-outline': calendarOutline,
+      'alert-circle-outline': alertCircleOutline,
+      'checkmark-circle-outline': checkmarkCircleOutline,
+      'checkmark-done-circle-outline': checkmarkDoneCircleOutline,
+      'create-outline': createOutline
     });
 
     this.clientForm = this.fb.group({
@@ -153,16 +155,23 @@ export class Tab2Page implements OnInit {
       principalAmount: ['', [Validators.required, Validators.min(1)]],
       expectedReturnAmount: ['', [Validators.required, Validators.min(1)]],
       paymentFrequency: ['DAILY', Validators.required],
-      durationDays: ['', [Validators.required, Validators.min(1)]],
-      startDate: [new Date().toISOString().substring(0, 10), Validators.required],
+      durationDays: ['', [Validators.min(1)]],
+      // Set by hand, or left blank to be worked out from the duration; one of the two is needed
+      installment: [''],
+      startDate: [localToday(), Validators.required],
       collectionStartDate: [''],
+    }, {
+      validators: (group: AbstractControl) => {
+        const { installment, durationDays } = group.value;
+        return String(installment ?? '').replace(/,/g, '') || durationDays ? null : { installmentOrDuration: true };
+      }
     });
 
     this.capitalForm = this.fb.group({
       type: ['CAPITAL_INJECTION', Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
       notes: [''],
-      date: [new Date().toISOString().substring(0, 10), Validators.required]
+      date: [localToday(), Validators.required]
     });
   }
 
@@ -186,7 +195,14 @@ export class Tab2Page implements OnInit {
     });
 
     this.apiService.getLoans().subscribe({
-      next: (res) => this.allLoans = res.data,
+      // Active loans get their label (overdue, due today, paid ahead...) from their installment schedule
+      next: (res) => {
+        this.allLoans = res.data.map((loan: any) => ({ ...loan, due: loan.schedule ? dueBadge(loan.schedule) : null }));
+        // Keep an open Loan details showing the fresh copy (e.g. after its details were edited)
+        if (this.selectedLoan) {
+          this.selectedLoan = this.allLoans.find((l) => l._id === this.selectedLoan._id) || this.selectedLoan;
+        }
+      },
       error: (err) => console.error(err)
     });
 
@@ -225,7 +241,7 @@ export class Tab2Page implements OnInit {
         this.displayToast('Transaction logged!');
         this.capitalForm.reset({ 
           type: 'CAPITAL_INJECTION',
-          date: new Date().toISOString().substring(0, 10)
+          date: localToday()
         });
       },
       error: (err) => {
@@ -257,6 +273,11 @@ export class Tab2Page implements OnInit {
     const payload = { ...this.loanForm.value };
     payload.principalAmount = Number(String(payload.principalAmount).replace(/,/g, ''));
     payload.expectedReturnAmount = Number(String(payload.expectedReturnAmount).replace(/,/g, ''));
+    // Leave out what wasn't filled in: no installment means "work it out", no duration means "until repaid"
+    const installment = String(payload.installment ?? '').replace(/,/g, '');
+    if (installment) payload.installment = Number(installment); else delete payload.installment;
+    if (payload.durationDays === '' || payload.durationDays === null || payload.durationDays === undefined) delete payload.durationDays;
+    else payload.durationDays = Number(payload.durationDays);
 
     this.isSavingLoan = true;
     this.apiService.addLoan(payload).pipe(
@@ -266,7 +287,8 @@ export class Tab2Page implements OnInit {
         this.displayToast('Loan disbursed successfully!');
         this.loanForm.reset({ 
           paymentFrequency: 'DAILY',
-          startDate: new Date().toISOString().substring(0, 10),
+          installment: '',
+          startDate: localToday(),
           collectionStartDate: ''
         });
       },
@@ -278,6 +300,54 @@ export class Tab2Page implements OnInit {
         this.displayToast(msg, 'danger');
       }
     });
+  }
+
+  periodName(frequency: string): string {
+    return frequency === 'WEEKLY' ? 'week' : frequency === 'MONTHLY' ? 'month' : 'day';
+  }
+
+  /** What the loan form will create, worked out as the server does (it checks again when saving) */
+  get loanPlanHint(): { text: string; warn: boolean } | null {
+    const v = this.loanForm.value;
+    return this.planHint(this.toNumber(v.expectedReturnAmount), this.toNumber(v.installment), Number(v.durationDays) || 0,
+      v.paymentFrequency, 'Set an installment, a duration, or both.');
+  }
+
+  /** The same for the installment in Edit loan details */
+  get editPlanHint(): { text: string; warn: boolean } | null {
+    const loan = this.editingLoan;
+    if (!loan) return null;
+    return this.planHint(loan.expectedReturnAmount, this.toNumber(this.editForm.installment), Number(this.editForm.durationDays) || 0,
+      loan.paymentFrequency, 'A loan without a duration needs an installment.');
+  }
+
+  private toNumber(value: any): number {
+    return Number(String(value ?? '').replace(/,/g, '')) || 0;
+  }
+
+  // The installments a loan gets from its expected return, installment (0: none set) and duration (0: none)
+  private planHint(expected: number, installment: number, days: number, frequency: string, blankText: string): { text: string; warn: boolean } | null {
+    if (!expected) return null;
+    const period = this.periodName(frequency);
+    const rupees = (amount: number) => `₹${amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    const count = !days ? 0 : frequency === 'WEEKLY' ? Math.ceil(days / 7) : frequency === 'MONTHLY' ? Math.ceil(days / 30) : days;
+
+    if (installment > 0) {
+      if (installment > expected) return { text: 'The installment can\'t be more than the expected return.', warn: true };
+      if (count && installment * count < expected - 0.005) {
+        const needed = Math.ceil((expected / count) * 100) / 100;
+        return { text: `Too small for ${days} days: needs at least ${rupees(needed)} per ${period}.`, warn: true };
+      }
+      const full = Math.floor((expected + 0.005) / installment);
+      const remainder = Math.round((expected - full * installment) * 100) / 100;
+      const total = remainder >= 1 ? full + 1 : full;
+      const last = remainder >= 1 ? `, the last ${rupees(remainder)}` : '';
+      return { text: `${total} installments of ${rupees(installment)} per ${period}${last}${days ? '' : ' · runs until repaid'}.`, warn: false };
+    }
+    if (count) {
+      return { text: `${rupees(Math.round((expected / count) * 100) / 100)} per ${period}, worked out from ${days} days (${count} installments).`, warn: false };
+    }
+    return { text: blankText, warn: true };
   }
 
   formatCurrencyInput(event: any, formGroup: FormGroup, controlName: string) {
@@ -299,6 +369,112 @@ export class Tab2Page implements OnInit {
     return type
       .replace(/_/g, ' ')
       .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+  }
+
+  // --- Correct a loan's details: client, disbursement date, collection start date ---
+  editingLoan: any = null;
+  editForm = { client: '', startDate: '', collectionStartDate: '', installment: '', durationDays: '' as string | number };
+  private editDurationAtOpen = '';
+  // The installment as the form opened, to send it only when it was changed
+  private editInstallmentAtOpen = '';
+  // The server's review of the edit: what changes, and the loan's schedule before and after
+  editPreview: any = null;
+  isPreviewingEdit = false;
+  isSavingEdit = false;
+  readonly maxDate = localToday();
+  readonly editFieldLabels: Record<string, string> = {
+    client: 'Client', startDate: 'Disbursement date', collectionStartDate: 'Collection start date', installment: 'Installment', durationDays: 'Tenure',
+  };
+
+  openEdit() {
+    const loan = this.selectedLoan;
+    if (!loan) return;
+    this.editingLoan = loan;
+    this.editForm = {
+      client: loan.client?._id || '',
+      startDate: localDay(loan.startDate),
+      collectionStartDate: loan.collectionStartDate ? localDay(loan.collectionStartDate) : '',
+      installment: loan.expectedDailyMonthlyPayment ? Number(loan.expectedDailyMonthlyPayment).toLocaleString('en-IN') : '',
+      durationDays: loan.durationDays ? String(loan.durationDays) : '',
+    };
+    this.editDurationAtOpen = String(this.editForm.durationDays);
+    this.editInstallmentAtOpen = this.editForm.installment;
+    this.editPreview = null;
+  }
+
+  closeEdit() {
+    this.editingLoan = null;
+    this.editPreview = null;
+  }
+
+  private editChanges(): LoanEdit {
+    const changes: LoanEdit = {
+      client: this.editForm.client,
+      startDate: this.editForm.startDate,
+      collectionStartDate: this.editForm.collectionStartDate || null,
+    };
+    // Only a changed installment is sent: blank means "work it out from the duration" again
+    if (this.editForm.installment !== this.editInstallmentAtOpen) {
+      const amount = String(this.editForm.installment).replace(/,/g, '');
+      changes.installment = amount ? Number(amount) : '';
+    }
+    // Tenure too, only when changed: blank means the loan runs until repaid
+    const days = String(this.editForm.durationDays ?? '').trim();
+    if (days !== this.editDurationAtOpen) changes.durationDays = days ? Number(days) : '';
+    return changes;
+  }
+
+  formatEditInstallment(event: any) {
+    const digits = String(event.target.value ?? '').replace(/[^0-9]/g, '');
+    this.editForm.installment = digits ? Number(digits).toLocaleString('en-IN') : '';
+  }
+
+  /** How a changed value reads in the review and the history */
+  changeText(field: string, value: string): string {
+    if (field === 'client' || field === 'installment' || field === 'durationDays') return value || 'none';
+    return value ? formatDate(value, 'd MMM y', 'en-IN') : 'not set';
+  }
+
+  reviewEdit() {
+    if (!this.editingLoan || this.isPreviewingEdit) return;
+    this.isPreviewingEdit = true;
+    this.apiService.previewLoanEdit(this.editingLoan._id, this.editChanges()).pipe(
+      finalize(() => this.isPreviewingEdit = false)
+    ).subscribe({
+      next: (res) => {
+        if (!res.data.changes.length) {
+          this.displayToast('Nothing has changed', 'medium');
+          return;
+        }
+        const s = res.data.schedule;
+        this.editPreview = { ...res.data, badges: s ? { before: dueBadge(s.before), after: dueBadge(s.after) } : null };
+      },
+      error: (err) => this.displayToast(this.errorText(err, 'Could not check the changes'), 'danger')
+    });
+  }
+
+  saveEdit() {
+    if (!this.editingLoan || this.isSavingEdit) return;
+    this.isSavingEdit = true;
+    this.apiService.updateLoan(this.editingLoan._id, this.editChanges()).pipe(
+      finalize(() => this.isSavingEdit = false)
+    ).subscribe({
+      next: () => {
+        this.closeEdit();
+        this.displayToast('Loan details updated');
+      },
+      error: (err) => this.displayToast(this.errorText(err, 'Could not save the changes'), 'danger')
+    });
+  }
+
+  // A date picker returns the picked day, possibly with a time; keep only YYYY-MM-DD
+  onEditDate(field: 'startDate' | 'collectionStartDate', value: any) {
+    this.editForm[field] = typeof value === 'string' ? value.substring(0, 10) : (field === 'startDate' ? this.editForm.startDate : '');
+  }
+
+  private errorText(err: any, fallback: string): string {
+    const error = err?.error?.error ?? err?.error?.message;
+    return (Array.isArray(error) ? error[0] : error) || fallback;
   }
 
   displayToast(message: string, color: string = 'success') {

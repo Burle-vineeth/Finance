@@ -71,7 +71,105 @@ ion-card.loan-card {
   color: var(--app-info);
 }
 
+.plan-hint {
+  margin: -2px 2px 12px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+
+  &.warn {
+    color: var(--app-warn);
+  }
+}
+
+.card-due {
+  margin: -4px 0 12px;
+}
+
 /* Loan details */
+.edit-loan-btn {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.history-row {
+  align-items: flex-start;
+}
+
+.history-change {
+  margin-top: 3px;
+  font-size: 0.85rem;
+  color: var(--app-text);
+  white-space: normal;
+}
+
+/* Edit loan details */
+ion-modal.edit-loan-dialog {
+  --width: min(380px, calc(100vw - 32px));
+  --height: fit-content;
+  --border-radius: 22px;
+}
+
+.edit-body {
+  padding: 18px 16px 12px;
+  background: var(--app-surface);
+  color: var(--app-text);
+
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+}
+
+.edit-sub {
+  margin: 4px 0 14px;
+  font-size: 0.82rem;
+  color: var(--app-text-2);
+}
+
+.review-list {
+  margin-bottom: 10px;
+}
+
+.review-grid .kv {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+
+  .chip {
+    white-space: normal;
+  }
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+
+  ion-button {
+    margin: 0;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+.due-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.due-meta {
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+}
+
 .detail-name {
   font-size: 1.1rem;
 }

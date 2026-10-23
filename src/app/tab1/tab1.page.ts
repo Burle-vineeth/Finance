@@ -7,7 +7,8 @@ import {
 } from '@ionic/angular/standalone';
 import { ApiService } from '../services/api.service';
 import { addIcons } from 'ionicons';
-import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline, checkmarkCircleOutline, settingsOutline, shieldCheckmarkOutline, eyeOutline, timeOutline } from 'ionicons/icons';
+import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline, checkmarkCircleOutline, checkmarkDoneCircleOutline, settingsOutline, timeOutline, hourglassOutline, chevronForward } from 'ionicons/icons';
+import { dueBadge } from '../utils/due-status';
 
 @Component({
   selector: 'app-tab1',
@@ -21,15 +22,12 @@ import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, cale
 export class Tab1Page implements OnInit {
   private apiService = inject(ApiService);
   private destroyRef = inject(DestroyRef);
-  public userRole = this.apiService.userRole;
-  
+
   metrics: any = null;
   isLoading = true;
   error = '';
-
-  toggleRole() {
-    this.apiService.toggleRole();
-  }
+  // Staff collections waiting for the admin's approval
+  approvals = { pendingCount: 0, pendingAmount: 0 };
 
   constructor() {
     addIcons({
@@ -39,10 +37,11 @@ export class Tab1Page implements OnInit {
       'alert-circle-outline': alertCircleOutline,
       'calendar-outline': calendarOutline,
       'checkmark-circle-outline': checkmarkCircleOutline,
+      'checkmark-done-circle-outline': checkmarkDoneCircleOutline,
       'settings-outline': settingsOutline,
-      'shield-checkmark-outline': shieldCheckmarkOutline,
-      'eye-outline': eyeOutline,
-      'time-outline': timeOutline
+      'time-outline': timeOutline,
+      'hourglass-outline': hourglassOutline,
+      'chevron-forward': chevronForward
     });
   }
 
@@ -60,10 +59,17 @@ export class Tab1Page implements OnInit {
   }
 
   loadDashboard() {
+    this.apiService.getApprovalSummary().subscribe({
+      next: (res) => this.approvals = res.data,
+      error: (err) => console.error(err)
+    });
     this.isLoading = true;
     this.apiService.getDashboardMetrics().subscribe({
       next: (res) => {
+        // Each loan's label (overdue, due today, paid ahead...) from its installment schedule
+        res.data.collections.activeLoans.forEach((loan: any) => loan.badge = dueBadge(loan.schedule));
         this.metrics = res.data;
+        this.error = '';
         this.isLoading = false;
       },
       error: (err) => {
@@ -72,55 +78,5 @@ export class Tab1Page implements OnInit {
         this.isLoading = false;
       }
     });
-  }
-
-  getDueStatus(loan: any): string {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const nextDate = new Date(loan.nextPaymentDate);
-    nextDate.setHours(0, 0, 0, 0);
-
-    if (loan.isCollectedToday) {
-      if (nextDate.getTime() === tomorrow.getTime()) {
-        return 'Collected, Next Due: Tomorrow';
-      } else {
-        const dateStr = nextDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-        return `Collected, Next Due: ${dateStr}`;
-      }
-    } else {
-      if (nextDate.getTime() <= today.getTime()) {
-        return 'Pending Today';
-      } else if (nextDate.getTime() === tomorrow.getTime()) {
-        return 'Next Due: Tomorrow';
-      } else {
-        const dateStr = nextDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-        return `Next Due: ${dateStr}`;
-      }
-    }
-  }
-
-  getDueStatusColor(loan: any): string {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const nextDate = new Date(loan.nextPaymentDate);
-    nextDate.setHours(0, 0, 0, 0);
-
-    if (loan.isCollectedToday) return 'success';
-    if (nextDate.getTime() <= today.getTime()) return 'warning';
-    return 'tertiary';
-  }
-
-  getDueStatusIcon(loan: any): string {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const nextDate = new Date(loan.nextPaymentDate);
-    nextDate.setHours(0, 0, 0, 0);
-
-    if (loan.isCollectedToday) return 'checkmark-circle-outline';
-    if (nextDate.getTime() <= today.getTime()) return 'alert-circle-outline';
-    return 'calendar-outline';
   }
 }
