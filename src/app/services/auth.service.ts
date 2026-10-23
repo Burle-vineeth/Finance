@@ -20,11 +20,12 @@ export class AuthService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/api/auth`;
 
-  // Kept in localStorage so a reload stays signed in
+  // Kept in localStorage so a reload stays signed in. Nothing about the sign-in itself (username or PIN)
+  // is stored: every sign-in starts from empty fields.
   private tokenKey = 'finance_token';
   private userKey = 'finance_user';
-  // The last username used on this phone, so signing in again only needs the PIN
-  private lastUsernameKey = 'finance_last_username';
+  // Earlier builds remembered the last username here; it is deleted on sign-out
+  private legacyLastUsernameKey = 'finance_last_username';
 
   /** Who is signed in. The server checks the role on every request; this only decides what the app shows. */
   readonly user = signal<AuthUser | null>(this.readStoredUser());
@@ -45,10 +46,6 @@ export class AuthService {
     return !!localStorage.getItem(this.tokenKey) && !!this.user();
   }
 
-  public get lastUsername(): string {
-    return localStorage.getItem(this.lastUsernameKey) || '';
-  }
-
   /** Where each role lands after signing in */
   homeUrl(role: Role | null = this.role()): string {
     return role === 'STAFF' ? '/staff/collect' : '/tabs/tab1';
@@ -63,10 +60,7 @@ export class AuthService {
   // message carries the server's reason on failure, e.g. attempts left or how long the lockout lasts
   login(username: string, pin: string): Observable<{ success: boolean; message?: string }> {
     return this.http.post<{ success: boolean; token: string; user: AuthUser }>(`${this.baseUrl}/login`, { username, pin }).pipe(
-      tap(res => {
-        this.storeSession(res.token, res.user);
-        localStorage.setItem(this.lastUsernameKey, res.user.username);
-      }),
+      tap(res => this.storeSession(res.token, res.user)),
       map(() => ({ success: true })),
       catchError((err) => of({ success: false, message: err.error?.message }))
     );
@@ -99,6 +93,7 @@ export class AuthService {
   logout() {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
+    localStorage.removeItem(this.legacyLastUsernameKey);
     this.user.set(null);
   }
 }

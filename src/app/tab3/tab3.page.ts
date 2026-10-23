@@ -10,6 +10,7 @@ import {
 import { finalize } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
 import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
+import { localToday } from '../utils/dates';
 import { PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
 import { arrowUpCircle, arrowDownCircle, trashOutline, arrowDown, arrowUp, receiptOutline, informationCircleOutline, swapHorizontalOutline, walletOutline, calendarOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
@@ -57,7 +58,7 @@ export class Tab3Page implements OnInit {
     this.repaymentForm = this.fb.group({
       loan: ['', Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
-      date: [new Date().toISOString().substring(0, 10), Validators.required]
+      date: [localToday(), Validators.required]
     });
   }
 
@@ -121,7 +122,7 @@ export class Tab3Page implements OnInit {
       next: (res) => {
         this.displayToast('Repayment logged successfully! Dashboard updated.');
         this.repaymentForm.reset({
-          date: new Date().toISOString().substring(0, 10)
+          date: localToday()
         });
       },
       error: (err) => {

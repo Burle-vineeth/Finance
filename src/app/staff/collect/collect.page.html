@@ -70,7 +70,7 @@
     (didDismiss)="showToast = false"></ion-toast>
 
   <!-- Record a collection for the chosen loan -->
-  <ion-modal [isOpen]="!!selected" (didDismiss)="closeCollect()">
+  <ion-modal [isOpen]="!!selected" (didDismiss)="closeCollect()" [enterAnimation]="slideUpEnter" [leaveAnimation]="slideDownLeave">
     <ng-template>
       <ion-header class="ion-no-border app-header" mode="md">
         <ion-toolbar>
@@ -107,6 +107,15 @@
                 <div class="kv-label">Still owes</div>
                 <div class="kv-value">{{ l.pendingAmount | currency:'INR':'symbol':'1.0-2' }}</div>
               </div>
+            </div>
+            <div class="due-now">
+              <span class="chip {{ l.due.chip }}">
+                <ion-icon [name]="l.due.icon"></ion-icon>
+                {{ l.due.label }}
+              </span>
+              @if (l.schedule?.unpaidInstallments > 1) {
+                <span class="due-now-meta">{{ l.schedule.unpaidInstallments }} installments unpaid</span>
+              }
             </div>
             @if (l.awaitingApproval?.count) {
               <div class="banner banner-info pending-note">

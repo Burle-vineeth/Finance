@@ -30,7 +30,13 @@ export class VerifyComponent {
 
   constructor() {
     addIcons({ 'lock-closed': lockClosed, 'alert-circle-outline': alertCircleOutline });
-    this.username = this.authService.lastUsername;
+  }
+
+  // Ionic can keep this page alive between visits, so empty it every time it is shown (e.g. after signing out)
+  ionViewWillEnter() {
+    this.username = '';
+    this.pin = '';
+    this.errorMsg = '';
   }
 
   async verify() {
@@ -51,9 +57,11 @@ export class VerifyComponent {
       finalize(() => this.isVerifying = false)
     ).subscribe(result => {
       if (result.success) {
+        this.username = '';
         this.pin = '';
         this.router.navigateByUrl(this.authService.homeUrl(), { replaceUrl: true });
       } else {
+        this.pin = '';
         this.errorMsg = result.message || 'Wrong username or PIN. Please try again.';
       }
     });

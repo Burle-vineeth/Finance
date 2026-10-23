@@ -224,9 +224,34 @@
   }
 }
 
+.overdue-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--app-border);
+  font-size: 0.82rem;
+  color: var(--app-neg);
+
+  ion-icon {
+    flex: none;
+    font-size: 1rem;
+  }
+
+  .num {
+    margin-left: auto;
+    font-weight: 700;
+  }
+}
+
 /* Active loans */
 .due-chip {
   margin-top: 7px;
+}
+
+.row-meta.awaiting {
+  color: var(--app-warn);
 }
 
 .empty-inline {

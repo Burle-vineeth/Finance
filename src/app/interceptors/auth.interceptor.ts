@@ -16,9 +16,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
-      // An expired or revoked token: go back to the PIN screen instead of leaving every page failing.
-      // verify-pin answers 401 for a wrong PIN, which must not count as being signed out.
-      if (error instanceof HttpErrorResponse && error.status === 401 && !req.url.endsWith('/api/auth/verify-pin')) {
+      // An expired or revoked token: go back to the sign-in screen instead of leaving every page failing.
+      // Signing in answers 401 for a wrong PIN, which must not count as being signed out.
+      const isSignIn = req.url.endsWith('/api/auth/login') || req.url.endsWith('/api/auth/verify-pin');
+      if (error instanceof HttpErrorResponse && error.status === 401 && !isSignIn) {
         authService.logout();
         router.navigate(['/verify']);
       }

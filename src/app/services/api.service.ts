@@ -68,6 +68,17 @@ export class ApiService {
     );
   }
 
+  /** What correcting a loan's details would change (client, disbursement date, collection start), without saving */
+  previewLoanEdit(id: string, changes: { client?: string; startDate?: string; collectionStartDate?: string | null }): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/loans/${id}`, { ...changes, dryRun: true });
+  }
+
+  updateLoan(id: string, changes: { client?: string; startDate?: string; collectionStartDate?: string | null }): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/loans/${id}`, changes).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
   // --- Transactions ---
   getTransactions(): Observable<any> {
     return this.sharedGet(`${this.baseUrl}/transactions`);

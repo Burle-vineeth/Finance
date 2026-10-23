@@ -11,19 +11,21 @@
           labelPlacement="stacked"
           [(ngModel)]="username"
           autocapitalize="off"
-          autocomplete="username"
+          autocomplete="off"
           [spellcheck]="false"
           placeholder="e.g. admin"></ion-input>
       </ion-item>
 
       <ion-item lines="none" class="field pin-field">
         <ion-input
-          type="password"
+          type="text"
+          class="pin-mask"
           inputmode="numeric"
+          name="finance-pin"
           [(ngModel)]="pin"
           maxlength="4"
-          placeholder="••••"
-          autocomplete="current-password"
+          placeholder="Enter PIN"
+          autocomplete="off"
           aria-label="PIN"
           (keyup.enter)="verify()"></ion-input>
       </ion-item>

@@ -10,7 +10,7 @@ import {
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { ApiService } from '../services/api.service';
-import { keyOutline, lockClosedOutline, logOutOutline, personAddOutline, peopleOutline, ellipsisHorizontal } from 'ionicons/icons';
+import { keyOutline, lockClosedOutline, logOutOutline, personAddOutline, peopleOutline, ellipsisHorizontal, informationCircleOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 
 @Component({
@@ -44,7 +44,8 @@ export class SettingsComponent implements OnInit {
   constructor() {
     addIcons({
       'key-outline': keyOutline, 'lock-closed-outline': lockClosedOutline, 'log-out-outline': logOutOutline,
-      'person-add-outline': personAddOutline, 'people-outline': peopleOutline, 'ellipsis-horizontal': ellipsisHorizontal
+      'person-add-outline': personAddOutline, 'people-outline': peopleOutline, 'ellipsis-horizontal': ellipsisHorizontal,
+      'information-circle-outline': informationCircleOutline
     });
   }
 
@@ -111,7 +112,7 @@ export class SettingsComponent implements OnInit {
       inputs: [
         { name: 'name', type: 'text', placeholder: 'Full name' },
         { name: 'username', type: 'text', placeholder: 'Username, e.g. ravi', attributes: { autocapitalize: 'off' } },
-        { name: 'pin', type: 'password', placeholder: '4-digit PIN', attributes: { inputmode: 'numeric', maxlength: 4 } },
+        { name: 'pin', type: 'text', cssClass: 'pin-mask', placeholder: '4-digit PIN', attributes: { inputmode: 'numeric', maxlength: 4, autocomplete: 'off' } },
       ],
       buttons: [
         { text: 'Cancel', role: 'cancel' },
@@ -154,7 +155,7 @@ export class SettingsComponent implements OnInit {
     const alert = await this.alertController.create({
       header: `New PIN for ${user.name}`,
       message: 'They will be signed out and need the new PIN to sign in.',
-      inputs: [{ name: 'pin', type: 'password', placeholder: '4-digit PIN', attributes: { inputmode: 'numeric', maxlength: 4 } }],
+      inputs: [{ name: 'pin', type: 'text', cssClass: 'pin-mask', placeholder: '4-digit PIN', attributes: { inputmode: 'numeric', maxlength: 4, autocomplete: 'off' } }],
       buttons: [
         { text: 'Cancel', role: 'cancel' },
         {

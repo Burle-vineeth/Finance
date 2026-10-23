@@ -76,6 +76,19 @@
   color: var(--app-text-2);
 }
 
+.due-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.due-now-meta {
+  font-size: 0.78rem;
+  color: var(--app-text-2);
+}
+
 .pending-note {
   margin: 12px 0 0;
 }

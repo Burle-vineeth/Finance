@@ -11,12 +11,14 @@ import { finalize } from 'rxjs/operators';
 import { addIcons } from 'ionicons';
 import {
   settingsOutline, close, callOutline, calendarOutline, hourglassOutline, checkmarkCircleOutline,
-  alertCircleOutline, informationCircleOutline, cashOutline
+  alertCircleOutline, informationCircleOutline, cashOutline, checkmarkDoneCircleOutline
 } from 'ionicons/icons';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { EmptyStateComponent } from '../../components/empty-state/empty-state.component';
 import { localToday, newRequestId } from '../../utils/dates';
+import { dueBadge } from '../../utils/due-status';
+import { slideUpEnter, slideDownLeave } from '../../utils/modal-animations';
 
 interface DueStatus {
   label: string;
@@ -55,6 +57,8 @@ export class CollectPage implements OnInit {
   form: FormGroup;
   isSaving = false;
   readonly today = localToday();
+  readonly slideUpEnter = slideUpEnter;
+  readonly slideDownLeave = slideDownLeave;
 
   showToast = false;
   toastMessage = '';
@@ -65,7 +69,7 @@ export class CollectPage implements OnInit {
       'settings-outline': settingsOutline, close, 'call-outline': callOutline, 'calendar-outline': calendarOutline,
       'hourglass-outline': hourglassOutline, 'checkmark-circle-outline': checkmarkCircleOutline,
       'alert-circle-outline': alertCircleOutline, 'information-circle-outline': informationCircleOutline,
-      'cash-outline': cashOutline
+      'cash-outline': cashOutline, 'checkmark-done-circle-outline': checkmarkDoneCircleOutline
     });
     this.form = this.fb.group({
       amount: ['', Validators.required],
@@ -123,32 +127,22 @@ export class CollectPage implements OnInit {
     this.load(() => event.target.complete());
   }
 
+  // The loan's label from its installment schedule; a collection sent today waits for the admin, so it isn't "to collect"
   private dueStatus(loan: any): DueStatus {
     if (loan.awaitingApproval?.today) {
       return { label: 'Sent for approval', chip: 'chip-info', icon: 'hourglass-outline', due: false };
     }
-    if (loan.isCollectedToday) {
-      return { label: 'Collected today', chip: 'chip-success', icon: 'checkmark-circle-outline', due: false };
-    }
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const next = new Date(loan.nextPaymentDate);
-    next.setHours(0, 0, 0, 0);
-    const day = next.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-    if (next.getTime() < today.getTime()) {
-      return { label: `Overdue since ${day}`, chip: 'chip-danger', icon: 'alert-circle-outline', due: true };
-    }
-    if (next.getTime() === today.getTime()) {
-      return { label: 'Due today', chip: 'chip-warning', icon: 'alert-circle-outline', due: true };
-    }
-    return { label: `Next due ${day}`, chip: '', icon: 'calendar-outline', due: false };
+    const badge = dueBadge(loan.schedule);
+    return { label: badge.label, chip: badge.chip, icon: badge.icon, due: badge.toCollect };
   }
 
   openCollect(loan: any) {
     this.selected = loan;
     this.requestId = newRequestId();
+    // One installment, or less when that is all that's due (e.g. the rest of a part-paid installment)
+    const due = loan.schedule?.amountDue > 0 ? Math.min(loan.schedule.amountDue, loan.installment) : loan.installment;
     this.form.reset({
-      amount: loan.installment ? Number(loan.installment).toLocaleString('en-IN') : '',
+      amount: due ? Number(due).toLocaleString('en-IN') : '',
       date: localToday(),
       notes: '',
     });

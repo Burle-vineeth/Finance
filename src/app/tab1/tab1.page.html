@@ -72,11 +72,11 @@
       </div>
     </section>
 
-    <!-- Today's collections against the daily-loan target -->
+    <!-- Today: cash collected, the installments that fall today (every frequency), and what is overdue -->
     <div class="section-label">
       <h2>Today's collections</h2>
-      @if (c.totalExpectedDailyCollections > 0 && c.todayCollections >= c.totalExpectedDailyCollections) {
-        <span class="chip chip-success"><ion-icon name="checkmark-circle-outline"></ion-icon>Target met</span>
+      @if (c.dueToday.count > 0 && c.dueToday.paidCount === c.dueToday.count) {
+        <span class="chip chip-success"><ion-icon name="checkmark-circle-outline"></ion-icon>All paid</span>
       }
     </div>
     <div class="app-card">
@@ -86,17 +86,24 @@
           <div class="today-amount num pos">{{ c.todayCollections | currency:'INR':'symbol':'1.0-2' }}</div>
         </div>
         <div class="today-target">
-          <div class="kv-label">Expected (daily loans)</div>
-          <div class="today-target-amount num">{{ c.totalExpectedDailyCollections | currency:'INR':'symbol':'1.0-2' }}</div>
+          <div class="kv-label">Due today</div>
+          <div class="today-target-amount num">{{ c.dueToday.amount | currency:'INR':'symbol':'1.0-2' }}</div>
         </div>
       </div>
-      @if (c.totalExpectedDailyCollections > 0) {
+      @if (c.dueToday.count > 0) {
         <div class="bar bar-success">
-          <span [style.width.%]="(c.todayCollections / c.totalExpectedDailyCollections) * 100"></span>
+          <span [style.width.%]="(c.dueToday.paidCount / c.dueToday.count) * 100"></span>
         </div>
-        <div class="today-foot">{{ (c.todayCollections / c.totalExpectedDailyCollections) | percent:'1.0-0' }} of today's target collected</div>
+        <div class="today-foot">{{ c.dueToday.paidCount }} of {{ c.dueToday.count }} {{ c.dueToday.count === 1 ? 'installment' : 'installments' }} due today paid</div>
       } @else {
-        <div class="today-foot">No daily loans to collect from today.</div>
+        <div class="today-foot">No installments fall due today.</div>
+      }
+      @if (c.overdue.amount > 0) {
+        <div class="overdue-line">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span>Overdue from earlier days</span>
+          <span class="num">{{ c.overdue.amount | currency:'INR':'symbol':'1.0-2' }} · {{ c.overdue.loans }} {{ c.overdue.loans === 1 ? 'loan' : 'loans' }}</span>
+        </div>
       }
     </div>
 
@@ -139,10 +146,16 @@
             <div class="row-main">
               <div class="row-title">{{ loan.clientName }}</div>
               <div class="row-sub num">{{ loan.expectedPayment | currency:'INR':'symbol':'1.0-2' }} · {{ loan.frequency | lowercase }}</div>
-              <span class="chip chip-{{ getDueStatusColor(loan) }} due-chip">
-                <ion-icon [name]="getDueStatusIcon(loan)"></ion-icon>
-                {{ getDueStatus(loan) }}
+              <span class="chip {{ loan.badge.chip }} due-chip">
+                <ion-icon [name]="loan.badge.icon"></ion-icon>
+                {{ loan.badge.label }}
               </span>
+              @if (loan.schedule.paidToday > 0 && loan.schedule.status !== 'UP_TO_DATE') {
+                <div class="row-meta">{{ loan.schedule.paidToday | currency:'INR':'symbol':'1.0-2' }} collected today</div>
+              }
+              @if (loan.awaitingApproval?.count) {
+                <div class="row-meta awaiting">{{ loan.awaitingApproval.amount | currency:'INR':'symbol':'1.0-2' }} from staff awaiting your approval</div>
+              }
             </div>
             <div class="row-end">
               <div class="row-meta">Pending</div>

@@ -10,11 +10,15 @@ import { finalize } from 'rxjs/operators';
 import { addIcons } from 'ionicons';
 import {
   arrowUpCircle, arrowDownCircle, documentTextOutline, walletOutline, cashOutline, chevronForward, arrowBack, call,
-  arrowDown, arrowUp, receiptOutline, personAddOutline, callOutline, locationOutline, calendarOutline
+  arrowDown, arrowUp, receiptOutline, personAddOutline, callOutline, locationOutline, calendarOutline,
+  alertCircleOutline, checkmarkCircleOutline, checkmarkDoneCircleOutline, createOutline
 } from 'ionicons/icons';
 import { ApiService } from '../services/api.service';
 import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
 import { PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
+import { slideUpEnter, slideDownLeave } from '../utils/modal-animations';
+import { dueBadge } from '../utils/due-status';
+import { localToday, localDay } from '../utils/dates';
 
 @Component({
   selector: 'app-tab2',
@@ -54,6 +58,8 @@ export class Tab2Page implements OnInit {
   selectedLoan: any = null;
   isModalOpen = false;
   historyView: 'calendar' | 'list' = 'calendar';
+  readonly slideUpEnter = slideUpEnter;
+  readonly slideDownLeave = slideDownLeave;
 
   openLoanDetails(loan: any) {
     this.selectedLoan = loan;
@@ -131,7 +137,11 @@ export class Tab2Page implements OnInit {
       'person-add-outline': personAddOutline,
       'call-outline': callOutline,
       'location-outline': locationOutline,
-      'calendar-outline': calendarOutline
+      'calendar-outline': calendarOutline,
+      'alert-circle-outline': alertCircleOutline,
+      'checkmark-circle-outline': checkmarkCircleOutline,
+      'checkmark-done-circle-outline': checkmarkDoneCircleOutline,
+      'create-outline': createOutline
     });
 
     this.clientForm = this.fb.group({
@@ -146,7 +156,7 @@ export class Tab2Page implements OnInit {
       expectedReturnAmount: ['', [Validators.required, Validators.min(1)]],
       paymentFrequency: ['DAILY', Validators.required],
       durationDays: ['', [Validators.required, Validators.min(1)]],
-      startDate: [new Date().toISOString().substring(0, 10), Validators.required],
+      startDate: [localToday(), Validators.required],
       collectionStartDate: [''],
     });
 
@@ -154,7 +164,7 @@ export class Tab2Page implements OnInit {
       type: ['CAPITAL_INJECTION', Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
       notes: [''],
-      date: [new Date().toISOString().substring(0, 10), Validators.required]
+      date: [localToday(), Validators.required]
     });
   }
 
@@ -178,7 +188,14 @@ export class Tab2Page implements OnInit {
     });
 
     this.apiService.getLoans().subscribe({
-      next: (res) => this.allLoans = res.data,
+      // Active loans get their label (overdue, due today, paid ahead...) from their installment schedule
+      next: (res) => {
+        this.allLoans = res.data.map((loan: any) => ({ ...loan, due: loan.schedule ? dueBadge(loan.schedule) : null }));
+        // Keep an open Loan details showing the fresh copy (e.g. after its details were edited)
+        if (this.selectedLoan) {
+          this.selectedLoan = this.allLoans.find((l) => l._id === this.selectedLoan._id) || this.selectedLoan;
+        }
+      },
       error: (err) => console.error(err)
     });
 
@@ -217,7 +234,7 @@ export class Tab2Page implements OnInit {
         this.displayToast('Transaction logged!');
         this.capitalForm.reset({ 
           type: 'CAPITAL_INJECTION',
-          date: new Date().toISOString().substring(0, 10)
+          date: localToday()
         });
       },
       error: (err) => {
@@ -258,7 +275,7 @@ export class Tab2Page implements OnInit {
         this.displayToast('Loan disbursed successfully!');
         this.loanForm.reset({ 
           paymentFrequency: 'DAILY',
-          startDate: new Date().toISOString().substring(0, 10),
+          startDate: localToday(),
           collectionStartDate: ''
         });
       },
@@ -291,6 +308,85 @@ export class Tab2Page implements OnInit {
     return type
       .replace(/_/g, ' ')
       .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+  }
+
+  // --- Correct a loan's details: client, disbursement date, collection start date ---
+  editingLoan: any = null;
+  editForm = { client: '', startDate: '', collectionStartDate: '' };
+  // The server's review of the edit: what changes, and the loan's schedule before and after
+  editPreview: any = null;
+  isPreviewingEdit = false;
+  isSavingEdit = false;
+  readonly maxDate = localToday();
+  readonly editFieldLabels: Record<string, string> = {
+    client: 'Client', startDate: 'Disbursement date', collectionStartDate: 'Collection start date',
+  };
+
+  openEdit() {
+    const loan = this.selectedLoan;
+    if (!loan) return;
+    this.editingLoan = loan;
+    this.editForm = {
+      client: loan.client?._id || '',
+      startDate: localDay(loan.startDate),
+      collectionStartDate: loan.collectionStartDate ? localDay(loan.collectionStartDate) : '',
+    };
+    this.editPreview = null;
+  }
+
+  closeEdit() {
+    this.editingLoan = null;
+    this.editPreview = null;
+  }
+
+  private editChanges() {
+    return {
+      client: this.editForm.client,
+      startDate: this.editForm.startDate,
+      collectionStartDate: this.editForm.collectionStartDate || null,
+    };
+  }
+
+  reviewEdit() {
+    if (!this.editingLoan || this.isPreviewingEdit) return;
+    this.isPreviewingEdit = true;
+    this.apiService.previewLoanEdit(this.editingLoan._id, this.editChanges()).pipe(
+      finalize(() => this.isPreviewingEdit = false)
+    ).subscribe({
+      next: (res) => {
+        if (!res.data.changes.length) {
+          this.displayToast('Nothing has changed', 'medium');
+          return;
+        }
+        const s = res.data.schedule;
+        this.editPreview = { ...res.data, badges: s ? { before: dueBadge(s.before), after: dueBadge(s.after) } : null };
+      },
+      error: (err) => this.displayToast(this.errorText(err, 'Could not check the changes'), 'danger')
+    });
+  }
+
+  saveEdit() {
+    if (!this.editingLoan || this.isSavingEdit) return;
+    this.isSavingEdit = true;
+    this.apiService.updateLoan(this.editingLoan._id, this.editChanges()).pipe(
+      finalize(() => this.isSavingEdit = false)
+    ).subscribe({
+      next: () => {
+        this.closeEdit();
+        this.displayToast('Loan details updated');
+      },
+      error: (err) => this.displayToast(this.errorText(err, 'Could not save the changes'), 'danger')
+    });
+  }
+
+  // A date picker returns the picked day, possibly with a time; keep only YYYY-MM-DD
+  onEditDate(field: 'startDate' | 'collectionStartDate', value: any) {
+    this.editForm[field] = typeof value === 'string' ? value.substring(0, 10) : (field === 'startDate' ? this.editForm.startDate : '');
+  }
+
+  private errorText(err: any, fallback: string): string {
+    const error = err?.error?.error ?? err?.error?.message;
+    return (Array.isArray(error) ? error[0] : error) || fallback;
   }
 
   displayToast(message: string, color: string = 'success') {

@@ -535,6 +535,15 @@ ion-item.date-field {
   }
 }
 
+/* Dialogs opened on top of another modal (edit loan over Loan details, a calendar over a form): Ionic removes
+   the backdrop and shadow of stacked modals, which makes the dialog look pasted onto the page, so keep them */
+ion-modal.date-dialog,
+ion-modal.edit-dialog,
+ion-modal.edit-loan-dialog {
+  --backdrop-opacity: var(--ion-backdrop-opacity, 0.32) !important;
+  --box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3) !important;
+}
+
 /* Calendar card opened by a date field */
 ion-modal.date-dialog {
   --width: fit-content;
@@ -556,6 +565,23 @@ ion-modal.date-dialog {
   margin: 2px 2px 6px;
   font-size: 0.8rem;
   color: var(--app-warn);
+}
+
+/* PIN boxes show dots but are plain text fields, so browsers don't offer to save or auto-fill them as passwords */
+.pin-mask,
+.pin-mask input {
+  -webkit-text-security: disc;
+}
+
+.pin-mask input::placeholder {
+  -webkit-text-security: none;
+}
+
+/* The big sign-in PIN box: the placeholder is plain text, so it must not look like an entered PIN */
+app-verify .pin-field input::placeholder {
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: normal;
 }
 
 ion-button.app-btn {
