@@ -15,7 +15,9 @@ import {
 } from 'ionicons/icons';
 import { ApiService, LoanEdit } from '../services/api.service';
 import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
-import { PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
+import { PaymentCalendarComponent, CalendarMarker } from '../components/payment-calendar/payment-calendar.component';
+import { InstallmentPlanEditorComponent } from '../components/installment-plan-editor/installment-plan-editor.component';
+import { PlanRow, checkPlan, planPayload, planRows, planProgress, samePlan } from '../utils/custom-installments';
 import { slideUpEnter, slideDownLeave } from '../utils/modal-animations';
 import { dueBadge } from '../utils/due-status';
 import { localToday, localDay } from '../utils/dates';
@@ -28,7 +30,7 @@ import { localToday, localDay } from '../utils/dates';
     CommonModule, FormsModule, ReactiveFormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonItem, IonLabel, IonInput, IonSelect,
     IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonModal, IonButtons, IonSpinner, IonDatetime,
-    EmptyStateComponent, PaymentCalendarComponent
+    EmptyStateComponent, PaymentCalendarComponent, InstallmentPlanEditorComponent
   ]
 })
 export class Tab2Page implements OnInit {
@@ -63,7 +65,47 @@ export class Tab2Page implements OnInit {
 
   openLoanDetails(loan: any) {
     this.selectedLoan = loan;
+    this.showWholePlan = false;
     this.isModalOpen = true;
+  }
+
+  // --- A loan's custom installment plan in Loan details ---
+  showWholePlan = false;
+  // Worked out once per loan copy (a reload brings a new copy), not on every change detection
+  private planView: { loan: any; rows: ReturnType<typeof planProgress>; markers: CalendarMarker[] } | null = null;
+
+  private planViewOf(loan: any) {
+    let view = this.planView;
+    if (view?.loan !== loan) {
+      const plan = loan?.customInstallments || [];
+      view = this.planView = {
+        loan,
+        rows: plan.length ? planProgress(plan, loan.totalRepaid || 0, loan.schedule?.today || localToday()) : [],
+        markers: [
+          { date: loan?.startDate, label: 'Disbursed' },
+          { date: loan?.collectionStartDate, label: 'Collection start' },
+          ...plan.map((row: any) => ({ date: row.date, label: 'Installment due' })),
+        ],
+      };
+    }
+    return view!;
+  }
+
+  planProgressOf(loan: any) {
+    return this.planViewOf(loan).rows;
+  }
+
+  /** A long plan shows a few installments around the first unpaid one until "Show all" */
+  visiblePlanRows(loan: any) {
+    const rows = this.planViewOf(loan).rows;
+    if (this.showWholePlan || rows.length <= 12) return rows;
+    const firstUnpaid = rows.findIndex((row) => row.state !== 'paid');
+    const from = Math.max(0, Math.min((firstUnpaid < 0 ? rows.length : firstUnpaid) - 2, rows.length - 10));
+    return rows.slice(from, from + 10);
+  }
+
+  calendarMarkers(loan: any): CalendarMarker[] {
+    return this.planViewOf(loan).markers;
   }
 
   closeLoanDetails() {
@@ -155,6 +197,8 @@ export class Tab2Page implements OnInit {
       principalAmount: ['', [Validators.required, Validators.min(1)]],
       expectedReturnAmount: ['', [Validators.required, Validators.min(1)]],
       paymentFrequency: ['DAILY', Validators.required],
+      // REGULAR: an installment and/or a duration; CUSTOM: a custom installment plan (newPlan), each with its own date and amount
+      repayment: ['REGULAR'],
       durationDays: ['', [Validators.min(1)]],
       // Set by hand, or left blank to be worked out from the duration; one of the two is needed
       installment: [''],
@@ -162,7 +206,8 @@ export class Tab2Page implements OnInit {
       collectionStartDate: [''],
     }, {
       validators: (group: AbstractControl) => {
-        const { installment, durationDays } = group.value;
+        const { installment, durationDays, repayment } = group.value;
+        if (repayment === 'CUSTOM') return null;
         return String(installment ?? '').replace(/,/g, '') || durationDays ? null : { installmentOrDuration: true };
       }
     });
@@ -267,17 +312,39 @@ export class Tab2Page implements OnInit {
     });
   }
 
-  onDisburseLoan() {
-    if (this.loanForm.invalid || this.isSavingLoan) return;
+  // The custom installment plan of the loan being created
+  newPlan: PlanRow[] = [];
 
-    const payload = { ...this.loanForm.value };
+  get isCustomPlan(): boolean {
+    return this.loanForm.value.repayment === 'CUSTOM';
+  }
+
+  /** Whether the form can be sent: everything filled in, and with a custom plan, a good one */
+  get canDisburse(): boolean {
+    if (this.loanForm.invalid || this.clients.length === 0 || this.isSavingLoan) return false;
+    if (!this.isCustomPlan) return true;
+    return checkPlan(this.newPlan, this.toNumber(this.loanForm.value.expectedReturnAmount), this.newLoanStart).ok;
+  }
+
+  onDisburseLoan() {
+    if (!this.canDisburse) return;
+
+    const { repayment, ...payload } = this.loanForm.value;
     payload.principalAmount = Number(String(payload.principalAmount).replace(/,/g, ''));
     payload.expectedReturnAmount = Number(String(payload.expectedReturnAmount).replace(/,/g, ''));
-    // Leave out what wasn't filled in: no installment means "work it out", no duration means "until repaid"
-    const installment = String(payload.installment ?? '').replace(/,/g, '');
-    if (installment) payload.installment = Number(installment); else delete payload.installment;
-    if (payload.durationDays === '' || payload.durationDays === null || payload.durationDays === undefined) delete payload.durationDays;
-    else payload.durationDays = Number(payload.durationDays);
+    if (repayment === 'CUSTOM') {
+      // The plan sets the dates and amounts, so the loan has no duration, installment or collection start date
+      payload.customInstallments = planPayload(this.newPlan);
+      delete payload.installment;
+      delete payload.durationDays;
+      delete payload.collectionStartDate;
+    } else {
+      // Leave out what wasn't filled in: no installment means "work it out", no duration means "until repaid"
+      const installment = String(payload.installment ?? '').replace(/,/g, '');
+      if (installment) payload.installment = Number(installment); else delete payload.installment;
+      if (payload.durationDays === '' || payload.durationDays === null || payload.durationDays === undefined) delete payload.durationDays;
+      else payload.durationDays = Number(payload.durationDays);
+    }
 
     this.isSavingLoan = true;
     this.apiService.addLoan(payload).pipe(
@@ -287,10 +354,12 @@ export class Tab2Page implements OnInit {
         this.displayToast('Loan disbursed successfully!');
         this.loanForm.reset({ 
           paymentFrequency: 'DAILY',
+          repayment: 'REGULAR',
           installment: '',
           startDate: localToday(),
           collectionStartDate: ''
         });
+        this.newPlan = [];
       },
       error: (err) => {
         let msg = 'Error disbursing loan';
@@ -321,7 +390,12 @@ export class Tab2Page implements OnInit {
       loan.paymentFrequency, 'A loan without a duration needs an installment.');
   }
 
-  private toNumber(value: any): number {
+  /** The new loan's disbursement day, 'YYYY-MM-DD' (the calendar can return a time with it) */
+  get newLoanStart(): string {
+    return String(this.loanForm.value.startDate || '').substring(0, 10);
+  }
+
+  toNumber(value: any): number {
     return Number(String(value ?? '').replace(/,/g, '')) || 0;
   }
 
@@ -374,6 +448,10 @@ export class Tab2Page implements OnInit {
   // --- Correct a loan's details: client, disbursement date, collection start date ---
   editingLoan: any = null;
   editForm = { client: '', startDate: '', collectionStartDate: '', installment: '', durationDays: '' as string | number };
+  // REGULAR: tenure and installment; CUSTOM: a custom installment plan (editPlan)
+  editMode: 'REGULAR' | 'CUSTOM' = 'REGULAR';
+  editPlan: PlanRow[] = [];
+  private editPlanAtOpen: PlanRow[] = [];
   private editDurationAtOpen = '';
   // The installment as the form opened, to send it only when it was changed
   private editInstallmentAtOpen = '';
@@ -384,19 +462,25 @@ export class Tab2Page implements OnInit {
   readonly maxDate = localToday();
   readonly editFieldLabels: Record<string, string> = {
     client: 'Client', startDate: 'Disbursement date', collectionStartDate: 'Collection start date', installment: 'Installment', durationDays: 'Tenure',
+    customInstallments: 'Repayment plan',
   };
 
   openEdit() {
     const loan = this.selectedLoan;
     if (!loan) return;
     this.editingLoan = loan;
+    const hasPlan = Boolean(loan.customInstallments?.length);
     this.editForm = {
       client: loan.client?._id || '',
       startDate: localDay(loan.startDate),
       collectionStartDate: loan.collectionStartDate ? localDay(loan.collectionStartDate) : '',
-      installment: loan.expectedDailyMonthlyPayment ? Number(loan.expectedDailyMonthlyPayment).toLocaleString('en-IN') : '',
+      // A plan loan's installment is only the plan's average, so moving it off the plan starts from blank
+      installment: !hasPlan && loan.expectedDailyMonthlyPayment ? Number(loan.expectedDailyMonthlyPayment).toLocaleString('en-IN') : '',
       durationDays: loan.durationDays ? String(loan.durationDays) : '',
     };
+    this.editMode = hasPlan ? 'CUSTOM' : 'REGULAR';
+    this.editPlanAtOpen = planRows(loan.customInstallments);
+    this.editPlan = this.editPlanAtOpen.slice();
     this.editDurationAtOpen = String(this.editForm.durationDays);
     this.editInstallmentAtOpen = this.editForm.installment;
     this.editPreview = null;
@@ -407,12 +491,33 @@ export class Tab2Page implements OnInit {
     this.editPreview = null;
   }
 
+  private get editHadPlan(): boolean {
+    return Boolean(this.editingLoan?.customInstallments?.length);
+  }
+
+  /** In custom plan mode, whether the plan is good (by the same rules as the server) */
+  get editPlanOk(): boolean {
+    return this.editMode !== 'CUSTOM' || checkPlan(this.editPlan, this.editingLoan?.expectedReturnAmount || 0, this.editForm.startDate).ok;
+  }
+
   private editChanges(): LoanEdit {
+    // A plan sets the loan's dates and amounts: only a new or changed plan is sent, and no collection start date
+    if (this.editMode === 'CUSTOM') {
+      const changes: LoanEdit = { client: this.editForm.client, startDate: this.editForm.startDate };
+      if (!this.editHadPlan || !samePlan(this.editPlan, this.editPlanAtOpen)) changes.customInstallments = planPayload(this.editPlan);
+      return changes;
+    }
     const changes: LoanEdit = {
       client: this.editForm.client,
       startDate: this.editForm.startDate,
       collectionStartDate: this.editForm.collectionStartDate || null,
     };
+    // Off a plan: back to a tenure and an installment, both as entered (a blank installment comes from the tenure)
+    if (this.editHadPlan) {
+      const amount = String(this.editForm.installment).replace(/,/g, '');
+      const days = String(this.editForm.durationDays ?? '').trim();
+      return { ...changes, customInstallments: null, installment: amount ? Number(amount) : '', durationDays: days ? Number(days) : '' };
+    }
     // Only a changed installment is sent: blank means "work it out from the duration" again
     if (this.editForm.installment !== this.editInstallmentAtOpen) {
       const amount = String(this.editForm.installment).replace(/,/g, '');
@@ -431,7 +536,7 @@ export class Tab2Page implements OnInit {
 
   /** How a changed value reads in the review and the history */
   changeText(field: string, value: string): string {
-    if (field === 'client' || field === 'installment' || field === 'durationDays') return value || 'none';
+    if (field === 'client' || field === 'installment' || field === 'durationDays' || field === 'customInstallments') return value || 'none';
     return value ? formatDate(value, 'd MMM y', 'en-IN') : 'not set';
   }
 

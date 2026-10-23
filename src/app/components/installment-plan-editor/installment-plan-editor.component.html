@@ -1,0 +1,94 @@
+<div class="plan-editor">
+  @if (!rows().length || showFill()) {
+    <div class="plan-fill">
+      <div class="field-row">
+        <ion-item lines="none" class="field">
+          <ion-input label="Installments" labelPlacement="stacked" type="number" inputmode="numeric" placeholder="e.g. 10"
+            [value]="fillCount()" (ionInput)="fillCount.set($event.detail.value ?? '')" class="plan-count"></ion-input>
+        </ion-item>
+        <ion-item lines="none" class="field date-field plan-first" button [detail]="false" (click)="picking.set('first')">
+          <div class="date-text">
+            <span class="date-label">First on</span>
+            <span class="date-value">{{ firstDay() | date:'d MMM y' }}</span>
+          </div>
+          <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+        </ion-item>
+      </div>
+      @if (fillProblem() || fillPreview(); as note) {
+        <p class="plan-note" [class.warn]="!!fillProblem()">{{ note }}</p>
+      }
+      <div class="plan-fill-actions">
+        @if (rows().length) {
+          <ion-button fill="clear" color="medium" size="small" (click)="showFill.set(false)">Cancel</ion-button>
+        }
+        <ion-button fill="outline" size="small" (click)="fill()" [disabled]="!canFill()" class="plan-fill-btn">
+          {{ rows().length ? 'Replace with' : 'Fill' }} {{ fillCount() || 'N' }} installments, one a {{ period() }}
+        </ion-button>
+      </div>
+    </div>
+  }
+
+  @if (rows().length) {
+    <div class="plan-head">
+      <span>{{ rows().length }} {{ rows().length === 1 ? 'installment' : 'installments' }}</span>
+      @if (!showFill()) {
+        <ion-button fill="clear" size="small" (click)="showFill.set(true)" class="plan-refill">Fill evenly again</ion-button>
+      }
+    </div>
+    <div class="plan-rows">
+      @for (row of rows(); track $index; let i = $index) {
+        <div class="plan-row">
+          <span class="plan-no">{{ i + 1 }}</span>
+          <button type="button" class="plan-date" [class.bad]="check().badDates.has(i)" (click)="picking.set(i)">
+            {{ row.date ? (row.date | date:'d MMM y') : 'Pick a date' }}
+          </button>
+          <div class="plan-amount" [class.bad]="check().badAmounts.has(i)">
+            <span class="plan-rupee">₹</span>
+            <ion-input aria-label="Amount" type="text" inputmode="decimal" placeholder="0" [value]="row.amount"
+              (ionInput)="setAmount(i, $event)"></ion-input>
+          </div>
+          <ion-button fill="clear" color="medium" size="small" class="plan-remove" (click)="remove(i)" aria-label="Remove installment">
+            <ion-icon slot="icon-only" name="close"></ion-icon>
+          </ion-button>
+        </div>
+      }
+    </div>
+    <ion-button fill="clear" size="small" (click)="add()" class="plan-add">
+      <ion-icon slot="start" name="add"></ion-icon>
+      Add installment
+    </ion-button>
+
+    @let c = check();
+    <div class="plan-total" [class.ok]="c.ok">
+      @if (c.ok) {
+        Adds up to {{ rupees(expected()) }}, the expected return
+      } @else if (c.left > 0) {
+        {{ rupees(c.total) }} of {{ rupees(expected()) }} · <strong>{{ rupees(c.left) }} left to assign</strong>
+      } @else if (c.left < 0) {
+        {{ rupees(c.total) }} of {{ rupees(expected()) }} · <strong>{{ rupees(abs(c.left)) }} over</strong>
+      } @else {
+        Adds up to {{ rupees(expected()) }}
+      }
+    </div>
+    @if (c.problems.length) {
+      <ul class="plan-problems">
+        @for (p of c.problems.slice(0, 3); track $index) {
+          <li>{{ p }}</li>
+        }
+        @if (c.problems.length > 3) {
+          <li>and {{ c.problems.length - 3 }} more</li>
+        }
+      </ul>
+    }
+  }
+
+  <!-- One calendar for every row; it starts on the row's date, or the day after the last one -->
+  <ion-modal [isOpen]="picking() !== null" (didDismiss)="picking.set(null)" class="date-dialog">
+    <ng-template>
+      <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="pickerValue()" [min]="startDate() || undefined"
+        [max]="latest()" [showDefaultTitle]="true" (ionChange)="pickDate($event.detail.value)">
+        <span slot="title">{{ picking() === 'first' ? 'First installment' : 'Installment ' + (+picking()! + 1) }}</span>
+      </ion-datetime>
+    </ng-template>
+  </ion-modal>
+</div>

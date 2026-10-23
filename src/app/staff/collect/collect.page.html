@@ -50,7 +50,7 @@
           <div class="avatar av-{{ (l.client?.name?.charCodeAt(0) + l.client?.name?.charCodeAt(l.client?.name?.length - 1)) % 6 }}">{{ l.client?.name?.charAt(0) || '?' }}</div>
           <div class="row-main">
             <div class="row-title">{{ l.client?.name }}</div>
-            <div class="row-sub num">{{ l.installment | currency:'INR':'symbol':'1.0-2' }} · {{ l.paymentFrequency | lowercase }} · owes {{ l.pendingAmount | currency:'INR':'symbol':'1.0-0' }}</div>
+            <div class="row-sub num">{{ l.installment | currency:'INR':'symbol':'1.0-2' }} · {{ l.schedule?.customPlan ? 'next, custom plan' : (l.paymentFrequency | lowercase) }} · owes {{ l.pendingAmount | currency:'INR':'symbol':'1.0-0' }}</div>
             <span class="chip {{ l.due.chip }} due-chip">
               <ion-icon [name]="l.due.icon"></ion-icon>
               {{ l.due.label }}
@@ -100,8 +100,8 @@
             </div>
             <div class="kv-grid">
               <div class="kv">
-                <div class="kv-label">Installment</div>
-                <div class="kv-value">{{ l.installment | currency:'INR':'symbol':'1.0-2' }} <span class="kv-unit">{{ l.paymentFrequency | lowercase }}</span></div>
+                <div class="kv-label">{{ l.schedule?.customPlan ? 'Next installment' : 'Installment' }}</div>
+                <div class="kv-value">{{ l.installment | currency:'INR':'symbol':'1.0-2' }} <span class="kv-unit">{{ l.schedule?.customPlan ? 'custom plan' : (l.paymentFrequency | lowercase) }}</span></div>
               </div>
               <div class="kv">
                 <div class="kv-label">Still owes</div>
