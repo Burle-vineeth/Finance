@@ -1,0 +1,180 @@
+<!-- The range: all time, a week (Monday to Sunday), a month, quarter, half year or year (calendar), or any two days -->
+<ion-segment [value]="kind()" (ionChange)="setKind($any($event).detail.value)" mode="ios" [scrollable]="true"
+  class="app-seg seg-inline trend-ranges">
+  @for (r of ranges; track r.kind) {
+    <ion-segment-button [value]="r.kind">
+      <ion-label>{{ r.label }}</ion-label>
+    </ion-segment-button>
+  }
+</ion-segment>
+
+<div class="app-card trend-card" [class.is-loading]="loading() && data()">
+  @switch (kind()) {
+    @case ('custom') {
+      <div class="field-row trend-custom">
+        <ion-item lines="none" class="field date-field" button [detail]="false" id="trend-from-trigger">
+          <div class="date-text">
+            <span class="date-label">From</span>
+            <span class="date-value">{{ showDay(customFrom(), 'd MMM yy') }}</span>
+          </div>
+          <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+        </ion-item>
+        <ion-item lines="none" class="field date-field" button [detail]="false" id="trend-to-trigger">
+          <div class="date-text">
+            <span class="date-label">To</span>
+            <span class="date-value">{{ showDay(customTo(), 'd MMM yy') }}</span>
+          </div>
+          <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+        </ion-item>
+      </div>
+      <!-- Not keepContentsMounted: a calendar kept alive while hidden reopens showing the wrong month's days -->
+      <ion-modal #fromModal trigger="trend-from-trigger" class="date-dialog">
+        <ng-template>
+          <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="customFrom()" [showDefaultTitle]="true"
+            (ionChange)="setCustom('from', $event.detail.value); fromModal.dismiss()">
+            <span slot="title">From</span>
+          </ion-datetime>
+        </ng-template>
+      </ion-modal>
+      <ion-modal #toModal trigger="trend-to-trigger" class="date-dialog">
+        <ng-template>
+          <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="customTo()" [showDefaultTitle]="true"
+            (ionChange)="setCustom('to', $event.detail.value); toModal.dismiss()">
+            <span slot="title">To</span>
+          </ion-datetime>
+        </ng-template>
+      </ion-modal>
+    }
+    @case ('all') {
+      <div class="trend-period">
+        <div class="trend-period-label">{{ allTimeLabel() }}</div>
+      </div>
+    }
+    @default {
+      <div class="trend-period">
+        <ion-button fill="clear" size="small" (click)="shift(-1)" aria-label="Previous period">
+          <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+        </ion-button>
+        <div class="trend-period-label">{{ periodLabel() }}</div>
+        <ion-button fill="clear" size="small" (click)="shift(1)" aria-label="Next period">
+          <ion-icon slot="icon-only" name="chevron-forward"></ion-icon>
+        </ion-button>
+      </div>
+    }
+  }
+
+  <!-- Always here, so the chart knows how wide it can be -->
+  <div #measure class="trend-body">
+    @if (data()) {
+      @let t = totals();
+      <!-- Up to today; the line keys double as the chart's legend -->
+      <div class="trend-summary">
+        <div>
+          <div class="kv-label"><i class="key key-expected"></i>Expected{{ t.hasFuture ? ' so far' : '' }}</div>
+          <div class="trend-amount num">{{ t.expected | currency:'INR':'symbol':'1.0-0' }}</div>
+        </div>
+        <div>
+          <div class="kv-label"><i class="key key-collected"></i>Collected</div>
+          <div class="trend-amount num">{{ t.collected | currency:'INR':'symbol':'1.0-0' }}</div>
+        </div>
+      </div>
+      @if (t.rate !== null || t.hasFuture) {
+        <div class="trend-note">
+          @if (t.rate !== null) {
+            {{ t.rate * 100 | number:'1.0-0' }}% of what fell due has come in.
+          }
+          @if (t.hasFuture) {
+            {{ t.upcoming | currency:'INR':'symbol':'1.0-0' }} more falls due by {{ showDay(data()!.to, 'd MMM') }}.
+          }
+        </div>
+      }
+
+      @if (rows().length) {
+        @if (view() === 'chart') {
+          @if (chart(); as c) {
+            <div class="trend-plot" tabindex="0" [attr.aria-label]="'Expected and collected, ' + (kind() === 'all' ? allTimeLabel() : periodLabel()) + '. Use the arrow keys to read each point.'"
+              (pointerdown)="track($event)" (pointermove)="track($event)" (pointerleave)="clearTrack($event)"
+              (keydown)="moveWithKeys($event)" (blur)="active.set(null)">
+              <svg [attr.width]="c.width" [attr.height]="chartHeight" aria-hidden="true">
+                @for (tick of c.ticks; track $index) {
+                  <line class="grid" [attr.x1]="c.left" [attr.x2]="c.right" [attr.y1]="tick.y" [attr.y2]="tick.y"></line>
+                  <text class="axis" [attr.x]="c.left - 8" [attr.y]="tick.y" text-anchor="end" dominant-baseline="middle">{{ tick.label }}</text>
+                }
+                @for (label of c.xLabels; track $index) {
+                  <text class="axis" [attr.x]="label.x" [attr.y]="c.baseline + 16" [attr.text-anchor]="label.anchor">{{ label.label }}</text>
+                }
+                @if (c.todayX !== null) {
+                  <line class="today" [attr.x1]="c.todayX" [attr.x2]="c.todayX" y1="4" [attr.y2]="c.baseline"></line>
+                  <text class="axis" [attr.x]="c.todayX + 4" y="10">Today</text>
+                }
+                <path class="line line-expected" [attr.d]="c.expectedPath"></path>
+                @if (c.collectedPath) {
+                  <path class="line line-collected" [attr.d]="c.collectedPath"></path>
+                }
+                @if (active() !== null) {
+                  @let i = active()!;
+                  <line class="crosshair" [attr.x1]="c.xs[i]" [attr.x2]="c.xs[i]" y1="4" [attr.y2]="c.baseline"></line>
+                  <circle class="dot dot-expected" [attr.cx]="c.xs[i]" [attr.cy]="c.expectedY[i]" r="4"></circle>
+                  @if (!points()[i].future) {
+                    <circle class="dot dot-collected" [attr.cx]="c.xs[i]" [attr.cy]="c.collectedY[i]" r="4"></circle>
+                  }
+                }
+              </svg>
+              @if (tooltip(); as tip) {
+                <div class="trend-tip" [style.left.px]="tip.left" [style.width.px]="tip.width">
+                  <div class="tip-title">{{ tip.title }}</div>
+                  <div class="tip-row">
+                    <i class="key key-expected"></i>
+                    <strong class="num">{{ tip.point.expected | currency:'INR':'symbol':'1.0-2' }}</strong>
+                    <span>expected</span>
+                  </div>
+                  <div class="tip-row">
+                    <i class="key key-collected"></i>
+                    @if (tip.point.future) {
+                      <strong>—</strong><span>not yet</span>
+                    } @else {
+                      <strong class="num">{{ tip.point.collected | currency:'INR':'symbol':'1.0-2' }}</strong>
+                      <span>collected</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        } @else {
+          <div class="trend-table" role="table" aria-label="Expected and collected">
+            <div class="trend-tr trend-th" role="row">
+              <span role="columnheader">{{ step() === 'day' ? 'Day' : step() === 'week' ? 'Week of' : 'Month' }}</span>
+              <span role="columnheader">Expected</span>
+              <span role="columnheader">Collected</span>
+            </div>
+            @for (p of rows(); track p.key) {
+              <div class="trend-tr" role="row">
+                <span role="cell">{{ longLabel(p) }}</span>
+                <span role="cell" class="num">{{ p.expected | currency:'INR':'symbol':'1.0-0' }}</span>
+                <span role="cell" class="num">{{ p.future ? '—' : (p.collected | currency:'INR':'symbol':'1.0-0') }}</span>
+              </div>
+            }
+          </div>
+        }
+        <div class="trend-foot">
+          <span>{{ stepNote() }}</span>
+          <ion-segment [value]="view()" (ionChange)="view.set($any($event).detail.value)" mode="ios" class="app-seg seg-mini">
+            <ion-segment-button value="chart">
+              <ion-label>Chart</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="table">
+              <ion-label>Table</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </div>
+      } @else {
+        <div class="trend-empty">Nothing fell due or came in during this period.</div>
+      }
+    } @else if (error()) {
+      <div class="trend-empty">{{ error() }}</div>
+    } @else {
+      <div class="trend-empty"><ion-spinner name="crescent"></ion-spinner></div>
+    }
+  </div>
+</div>

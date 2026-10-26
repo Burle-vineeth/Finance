@@ -1,6 +1,6 @@
 <ion-header [translucent]="true" class="ion-no-border app-header" mode="md">
   <ion-toolbar>
-    <ion-title>Command Center</ion-title>
+    <ion-title>Command center</ion-title>
     <ion-buttons slot="end">
       <ion-button routerLink="/settings" aria-label="Settings">
         <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
@@ -106,6 +106,10 @@
         </div>
       }
     </div>
+
+    <!-- What the installment schedules had falling due against what came in -->
+    <div class="section-label"><h2>Expected vs collected</h2></div>
+    <app-collection-trend></app-collection-trend>
 
     <!-- Capital and profit, laid out as a small statement -->
     <div class="section-label"><h2>Capital &amp; profit</h2></div>

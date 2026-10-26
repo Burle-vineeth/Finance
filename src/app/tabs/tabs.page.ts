@@ -3,7 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonBadge } from '@ionic/angular/standalone';
 import { interval } from 'rxjs';
 import { addIcons } from 'ionicons';
-import { triangle, ellipse, square, statsChart, cash, wallet, checkmarkDoneCircle } from 'ionicons/icons';
+import {
+  statsChart, statsChartOutline, cash, cashOutline, wallet, walletOutline, checkmarkDoneCircle, checkmarkDoneCircleOutline,
+} from 'ionicons/icons';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 
@@ -24,9 +26,24 @@ export class TabsPage implements OnInit {
 
   // Staff collections waiting for approval, shown on the Approvals tab
   pendingCount = 0;
+  selectedTab = '';
 
   constructor() {
-    addIcons({ triangle, ellipse, square, 'stats-chart': statsChart, cash, wallet, 'checkmark-done-circle': checkmarkDoneCircle });
+    addIcons({
+      'stats-chart': statsChart, 'stats-chart-outline': statsChartOutline, cash, 'cash-outline': cashOutline,
+      wallet, 'wallet-outline': walletOutline,
+      'checkmark-done-circle': checkmarkDoneCircle, 'checkmark-done-circle-outline': checkmarkDoneCircleOutline,
+    });
+  }
+
+  // The selected tab's icon is filled, the others outlined
+  icon(tab: string, name: string): string {
+    return tab === this.selectedTab ? name : `${name}-outline`;
+  }
+
+  onTabChange(tab: string) {
+    this.selectedTab = tab;
+    this.loadPendingCount();
   }
 
   ngOnInit() {

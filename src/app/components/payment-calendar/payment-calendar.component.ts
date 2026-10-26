@@ -3,6 +3,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { chevronBack, chevronForward, arrowDown, arrowUp } from 'ionicons/icons';
+import { compactRupees } from '../../utils/money';
 
 export interface CalendarMarker {
   date?: string | Date | null;
@@ -34,9 +35,6 @@ const dayKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
-
-// Up to 2 decimals without trailing zeros: 1.05, 2.4, 12
-const twoDecimals = (value: number) => String(Number(value.toFixed(2)));
 
 @Component({
   selector: 'app-payment-calendar',
@@ -163,11 +161,8 @@ export class PaymentCalendarComponent {
     return this.loanNames()[loanId] || t.client?.name || 'Repayment';
   }
 
-  /** Short amount that fits in a day cell: ₹600, ₹1.05k, ₹12.35k, ₹1.25L */
+  /** Short amount that fits in a day cell */
   compact(amount: number): string {
-    // The unit is picked after rounding, so 99,999 reads ₹1L rather than ₹100k
-    if (Number(twoDecimals(amount)) < 1000) return `₹${twoDecimals(amount)}`;
-    if (Number(twoDecimals(amount / 1000)) < 100) return `₹${twoDecimals(amount / 1000)}k`;
-    return `₹${twoDecimals(amount / 100000)}L`;
+    return compactRupees(amount);
   }
 }

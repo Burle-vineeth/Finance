@@ -340,6 +340,10 @@
                 {{ l.due.label }}
               </span>
             }
+            <!-- Flat interest a year: agreed, and what it came to once the loan closed (or so far, past its term) -->
+            @if (l.interestRate?.agreed != null) {
+              <div class="card-rate num">Interest {{ l.interestRate.agreed | number:'1.0-1' }}% p.a.@if (l.interestRate.actual != null) { · Actual {{ l.interestRate.actual | number:'1.0-1' }}%@if (l.status === 'ACTIVE') { so far}}</div>
+            }
 
             <div class="progress-text">
               <span><strong class="pos num">{{ l.totalRepaid | currency:'INR':'symbol':'1.0-0' }}</strong> collected</span>
@@ -451,6 +455,18 @@
               <div class="kv-label">Repayments</div>
               <div class="kv-value">{{ getRepaymentCount(l._id) }}</div>
             </div>
+            @if (l.interestRate?.agreed != null) {
+              <div class="kv">
+                <div class="kv-label">Agreed interest p.a.</div>
+                <div class="kv-value">{{ l.interestRate.agreed | number:'1.0-1' }}%</div>
+              </div>
+            }
+            @if (l.interestRate?.actual != null) {
+              <div class="kv">
+                <div class="kv-label">{{ l.status === 'ACTIVE' ? 'Actual so far p.a.' : 'Actual interest p.a.' }}</div>
+                <div class="kv-value">{{ l.interestRate.actual | number:'1.0-1' }}%</div>
+              </div>
+            }
             @if (l.customInstallments?.length) {
               <div class="kv">
                 <div class="kv-label">{{ l.schedule?.nextInstallmentAmount ? 'Next installment' : 'Installments' }}</div>

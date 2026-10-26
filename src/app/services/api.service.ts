@@ -57,6 +57,15 @@ export class ApiService {
     return this.sharedGet(`${this.baseUrl}/dashboard`);
   }
 
+  /** Money expected and collected each day from one YYYY-MM-DD to another; without them, from the first loan to today */
+  getCollectionTrend(from?: string, to?: string): Observable<any> {
+    const query = new URLSearchParams();
+    if (from) query.set('from', from);
+    if (to) query.set('to', to);
+    const qs = query.toString();
+    return this.sharedGet(`${this.baseUrl}/dashboard/collections${qs ? `?${qs}` : ''}`);
+  }
+
   // --- Clients ---
   getClients(): Observable<any> {
     return this.sharedGet(`${this.baseUrl}/clients`);
