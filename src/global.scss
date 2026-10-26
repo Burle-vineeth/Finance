@@ -244,6 +244,20 @@ ion-card.app-card {
   color: var(--app-text-3);
 }
 
+/* "Swipe ... to the left to ..." above a list of rows that slide open (ledger, late fees) */
+.swipe-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px 4px;
+  font-size: 0.78rem;
+  color: var(--app-text-3);
+
+  ion-icon {
+    font-size: 1rem;
+  }
+}
+
 /* Rows built from ion-item (ledger, loan history) */
 ion-item.row-item {
   --background: var(--app-surface);

@@ -304,13 +304,13 @@
   @if (viewMode === 'loans') {
     <ion-segment [(ngModel)]="loanFilter" mode="ios" class="app-seg seg-inline">
       <ion-segment-button value="ACTIVE">
-        <ion-label>Active</ion-label>
+        <ion-label>Active ({{ loanCounts.ACTIVE }})</ion-label>
       </ion-segment-button>
       <ion-segment-button value="CLOSED">
-        <ion-label>Closed</ion-label>
+        <ion-label>Closed ({{ loanCounts.CLOSED }})</ion-label>
       </ion-segment-button>
       <ion-segment-button value="DEFAULTED">
-        <ion-label>Defaulted</ion-label>
+        <ion-label>Defaulted ({{ loanCounts.DEFAULTED }})</ion-label>
       </ion-segment-button>
     </ion-segment>
 
@@ -360,7 +360,7 @@
               </div>
               <div>
                 <div class="stat-label">Expected</div>
-                <div class="stat-value num">{{ l.expectedReturnAmount | currency:'INR':'symbol':'1.0-0' }}</div>
+                <div class="stat-value num">{{ totalDue(l) | currency:'INR':'symbol':'1.0-0' }}</div>
               </div>
               <div class="stat-end">
                 <div class="stat-label">Pending</div>
@@ -418,7 +418,7 @@
             <div class="detail-amount num">{{ l.pendingAmount | currency:'INR':'symbol':'1.0-2' }}</div>
 
             <div class="progress-text">
-              <span><strong class="num">{{ l.totalRepaid | currency:'INR':'symbol':'1.0-2' }}</strong> of {{ l.expectedReturnAmount | currency:'INR':'symbol':'1.0-2' }} repaid</span>
+              <span><strong class="num">{{ l.totalRepaid | currency:'INR':'symbol':'1.0-2' }}</strong> of {{ totalDue(l) | currency:'INR':'symbol':'1.0-2' }} repaid</span>
               <span class="num">{{ getCollectionPercentage(l) | percent:'1.0-0' }}</span>
             </div>
             <div class="bar bar-success">
@@ -447,6 +447,12 @@
               <div class="kv-label">Expected return</div>
               <div class="kv-value">{{ l.expectedReturnAmount | currency:'INR':'symbol':'1.0-2' }}</div>
             </div>
+            @if (feesOf(l) > 0) {
+              <div class="kv">
+                <div class="kv-label">Late fees</div>
+                <div class="kv-value">{{ feesOf(l) | currency:'INR':'symbol':'1.0-2' }}</div>
+              </div>
+            }
             <div class="kv">
               <div class="kv-label">Total repaid</div>
               <div class="kv-value pos">{{ l.totalRepaid | currency:'INR':'symbol':'1.0-2' }}</div>
@@ -518,6 +524,50 @@
             }
           </div>
 
+          <!-- Late fees add to what the client owes; a closed loan reopens until the fee is paid -->
+          @if (l.status !== 'DEFAULTED') {
+            <div class="section-label with-control">
+              <h2>Late fees</h2>
+              <ion-button fill="clear" size="small" class="fee-add" (click)="openLateFee()">
+                <ion-icon slot="start" name="add"></ion-icon>
+                Add late fee
+              </ion-button>
+            </div>
+            @if (l.lateFees?.length) {
+              <!-- An unpaid fee slides open to show its remove button; a paid one stays put -->
+              @if (hasRemovableFee(l)) {
+                <p class="swipe-hint">
+                  <ion-icon name="swap-horizontal-outline"></ion-icon>
+                  Swipe an unpaid fee to the left to remove it
+                </p>
+              }
+              <ion-list class="plain-list fee-list">
+                @for (fee of l.lateFees; track fee._id; let first = $first, last = $last) {
+                  <ion-item-sliding #feeRow class="g-row" [class.first]="first" [class.last]="last" [disabled]="!canRemoveFee(l, fee)">
+                    <ion-item class="row-item" lines="none">
+                      <div slot="start" class="icon-tile tile-withdraw"><ion-icon name="alarm-outline"></ion-icon></div>
+                      <div class="row-main">
+                        <div class="row-title num">{{ fee.amount | currency:'INR':'symbol':'1.0-2' }}</div>
+                        <div class="row-sub">{{ fee.date | date:'d MMM y' }}@if (fee.note) { · {{ fee.note }}}</div>
+                      </div>
+                    </ion-item>
+                    @if (canRemoveFee(l, fee)) {
+                      <ion-item-options side="end">
+                        <ion-item-option color="danger" (click)="confirmRemoveLateFee(l, fee, feeRow)" aria-label="Remove late fee">
+                          @if (removingFeeId === fee._id) {
+                            <ion-spinner slot="icon-only" name="crescent"></ion-spinner>
+                          } @else {
+                            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                          }
+                        </ion-item-option>
+                      </ion-item-options>
+                    }
+                  </ion-item-sliding>
+                }
+              </ion-list>
+            }
+          }
+
           @if (l.customInstallments?.length) {
             @let planRows = planProgressOf(l);
             <div class="section-label with-control">
@@ -562,10 +612,16 @@
                     <div class="row-meta">{{ h.at | date:'d MMM y, h:mm a' }} · by {{ h.byName || 'admin' }}</div>
                     @for (c of h.changes; track c.field) {
                       <div class="history-change">
-                        <span class="muted">{{ editFieldLabels[c.field] || c.field }}:</span>
-                        {{ changeText(c.field, c.from) }}
-                        →
-                        <strong>{{ changeText(c.field, c.to) }}</strong>
+                        @if (c.field === 'lateFee') {
+                          <!-- The space stays inside the span: Angular drops whitespace-only gaps between tags -->
+                          <span class="muted">Late fee {{ c.to ? 'added' : 'removed' }}: </span>
+                          <strong>{{ c.to || c.from }}</strong>
+                        } @else {
+                          <span class="muted">{{ editFieldLabels[c.field] || c.field }}:</span>
+                          {{ changeText(c.field, c.from) }}
+                          →
+                          <strong>{{ changeText(c.field, c.to) }}</strong>
+                        }
                       </div>
                     }
                   </div>
@@ -619,6 +675,58 @@
               message="No transactions found for this loan."></app-empty-state>
           }
         </ion-content>
+      }
+    </ng-template>
+  </ion-modal>
+
+  <!-- Charge a late fee: it adds to what the client owes, and reopens a closed loan until it is paid -->
+  <ion-modal [isOpen]="!!feeLoan" (didDismiss)="closeLateFee()" class="edit-loan-dialog">
+    <ng-template>
+      @if (feeLoan) {
+        <div class="edit-body">
+          <h3>Add late fee</h3>
+          <p class="edit-sub">
+            Adds to what {{ feeLoan.client?.name || 'the client' }} owes ({{ feeLoan.pendingAmount | currency:'INR':'symbol':'1.0-2' }} now).
+            @if (feeLoan.status === 'CLOSED') {
+              The loan opens again until the fee is paid.
+            }
+          </p>
+          <div class="field-row">
+            <ion-item lines="none" class="field">
+              <ion-input label="Amount" labelPlacement="stacked" type="text" inputmode="numeric" placeholder="₹500"
+                [(ngModel)]="feeForm.amount" (ionInput)="formatFeeAmount($event)"></ion-input>
+            </ion-item>
+            <ion-item lines="none" class="field date-field" button [detail]="false" id="late-fee-date-trigger">
+              <div class="date-text">
+                <span class="date-label">Date</span>
+                <span class="date-value">{{ feeForm.date | date:'d MMM y' }}</span>
+              </div>
+              <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+            </ion-item>
+          </div>
+          <!-- Not keepContentsMounted: a calendar kept alive while hidden reopens showing the wrong month's days -->
+          <ion-modal #feeDateModal trigger="late-fee-date-trigger" class="date-dialog">
+            <ng-template>
+              <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="feeForm.date" [min]="feeMinDate" [max]="maxDate"
+                [showDefaultTitle]="true" (ionChange)="onFeeDate($event.detail.value); feeDateModal.dismiss()">
+                <span slot="title">Late fee date</span>
+              </ion-datetime>
+            </ng-template>
+          </ion-modal>
+          <ion-item lines="none" class="field">
+            <ion-input label="Note (optional)" labelPlacement="stacked" [(ngModel)]="feeForm.note" [maxlength]="200"
+              placeholder="e.g. 3 weeks late"></ion-input>
+          </ion-item>
+          <div class="edit-actions">
+            <ion-button fill="clear" color="medium" (click)="closeLateFee()">Cancel</ion-button>
+            <ion-button color="primary" (click)="saveLateFee()" [disabled]="feeAmount <= 0 || isSavingFee">
+              @if (isSavingFee) {
+                <ion-spinner slot="start" name="crescent"></ion-spinner>
+              }
+              Add fee
+            </ion-button>
+          </div>
+        </div>
       }
     </ng-template>
   </ion-modal>

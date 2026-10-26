@@ -99,6 +99,20 @@ export class ApiService {
     );
   }
 
+  /** Charge a late fee: it adds to what the client owes, and reopens a closed loan until it is paid */
+  addLateFee(loanId: string, fee: { amount: number; date: string; note?: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/loans/${loanId}/late-fees`, fee).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
+  /** Remove a late fee charged by mistake, while the loan still owes it */
+  removeLateFee(loanId: string, feeId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/loans/${loanId}/late-fees/${feeId}`).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
   // --- Transactions ---
   getTransactions(): Observable<any> {
     return this.sharedGet(`${this.baseUrl}/transactions`);
