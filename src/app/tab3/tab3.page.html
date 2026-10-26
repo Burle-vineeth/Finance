@@ -34,7 +34,7 @@
           <ion-select label="Active loan" labelPlacement="stacked" formControlName="loan" placeholder="Choose a loan">
             @for (loan of activeLoans; track trackById($index, loan)) {
               <ion-select-option [value]="loan._id">
-                {{ loan.client?.name }} (Owes {{ loan.pendingAmount | currency:'INR':'symbol':'1.0-2' }})
+                {{ loan.client?.name }} (owes {{ loan.pendingAmount | currency:'INR':'symbol':'1.0-2' }})
               </ion-select-option>
             }
           </ion-select>

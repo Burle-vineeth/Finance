@@ -133,7 +133,7 @@ export class Tab2Page implements OnInit {
 
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return `${diffDays} Days`;
+    return `${diffDays} ${diffDays === 1 ? 'day' : 'days'}`;
   }
 
   getCollectionPercentage(loan: any): number {
@@ -440,9 +440,9 @@ export class Tab2Page implements OnInit {
 
   formatType(type: string): string {
     if (!type) return '';
-    return type
-      .replace(/_/g, ' ')
-      .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+    // Sentence case, like the rest of the app: CAPITAL_INJECTION -> Capital injection
+    const words = type.replace(/_/g, ' ').toLowerCase();
+    return words.charAt(0).toUpperCase() + words.slice(1);
   }
 
   // --- Correct a loan's details: client, disbursement date, collection start date ---

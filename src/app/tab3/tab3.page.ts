@@ -146,7 +146,7 @@ export class Tab3Page implements OnInit {
     if (this.deletingId) return;
 
     const alert = await this.alertController.create({
-      header: 'Undo Transaction?',
+      header: 'Undo transaction?',
       message: 'This will completely remove the transaction and reverse any associated loan calculations. Are you sure?',
       buttons: [
         { text: 'Cancel', role: 'cancel' },
@@ -184,9 +184,9 @@ export class Tab3Page implements OnInit {
 
   formatType(type: string): string {
     if (!type) return '';
-    return type
-      .replace(/_/g, ' ')
-      .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+    // Sentence case, like the rest of the app: CAPITAL_INJECTION -> Capital injection
+    const words = type.replace(/_/g, ' ').toLowerCase();
+    return words.charAt(0).toUpperCase() + words.slice(1);
   }
 
   displayToast(message: string, color: string = 'success') {
