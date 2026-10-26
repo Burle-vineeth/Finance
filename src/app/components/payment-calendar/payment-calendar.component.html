@@ -6,10 +6,10 @@
     <div class="cal-month">{{ month() | date:'MMMM y' }}</div>
     <div class="cal-sum">
       @if (grid().count > 0) {
-        <span class="pos">{{ grid().total | currency:'INR':'symbol':'1.0-0' }}</span>
-        · {{ grid().count }} {{ grid().count === 1 ? 'payment' : 'payments' }}
+        <span class="cal-total">{{ grid().total | currency:'INR':'symbol':'1.0-0' }}</span>
+        · {{ grid().count }} {{ grid().count === 1 ? kind().one : kind().many }}
       } @else {
-        No payments this month
+        No {{ kind().many }} this month
       }
     </div>
   </div>
@@ -27,7 +27,7 @@
       [class.today]="c.isToday"
       [class.selected]="c.key === selectedKey()"
       [style.grid-column-start]="first ? grid().offset + 1 : null"
-      [attr.aria-label]="(c.key | date:'d MMMM') + (c.total > 0 ? ', ' + (c.total | currency:'INR':'symbol':'1.0-0') + ' collected' : '')"
+      [attr.aria-label]="(c.key | date:'d MMMM') + (c.total > 0 ? ', ' + (c.total | currency:'INR':'symbol':'1.0-0') + ' ' + kind().verb : '')"
       (click)="select(c.key)">
       <span class="cal-num">{{ c.day }}</span>
       @if (c.total > 0) {
@@ -59,32 +59,41 @@
     <div class="cal-detail-head">
       <span>{{ d.key | date:'EEE, d MMM y' }}</span>
       @if (d.total > 0) {
-        <span class="pos">{{ d.total | currency:'INR':'symbol':'1.0-2' }}</span>
+        <span class="cal-total">{{ d.total | currency:'INR':'symbol':'1.0-2' }}</span>
       }
     </div>
     @for (label of d.markers; track $index) {
       <div class="cal-note"><i class="sw sw-mark"></i>{{ label }}</div>
     }
-    @for (t of d.payments; track t._id) {
+    @for (t of d.entries; track t._id) {
       <div class="row cal-row">
-        <div class="icon-tile tile-in"><ion-icon name="arrow-down"></ion-icon></div>
+        <div class="icon-tile"
+          [class.tile-in]="type() === 'REPAYMENT'"
+          [class.tile-capital]="type() === 'CAPITAL_INJECTION'"
+          [class.tile-withdraw]="type() === 'CAPITAL_WITHDRAWAL'">
+          <ion-icon [name]="kind().moneyIn ? 'arrow-down' : 'arrow-up'"></ion-icon>
+        </div>
         <div class="row-main">
-          <div class="row-title">{{ paymentTitle(t) }}</div>
-          <div class="row-sub">
-            @if (t.profitPortion > 0) {
-              Profit {{ t.profitPortion | currency:'INR':'symbol':'1.0-2' }}
-            } @else {
-              Principal
-            }
-          </div>
+          <div class="row-title">{{ entryTitle(t) }}</div>
+          @if (type() === 'REPAYMENT') {
+            <div class="row-sub">
+              @if (t.profitPortion > 0) {
+                Profit {{ t.profitPortion | currency:'INR':'symbol':'1.0-2' }}
+              } @else {
+                Principal
+              }
+            </div>
+          }
         </div>
         <div class="row-end">
-          <div class="row-amount pos">+{{ t.amount | currency:'INR':'symbol':'1.0-2' }}</div>
+          <div class="row-amount" [class.pos]="kind().moneyIn">
+            {{ kind().moneyIn ? '+' : '−' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
+          </div>
         </div>
       </div>
     }
-    @if (!d.payments.length && !d.markers.length) {
-      <div class="cal-empty">No payments on this day</div>
+    @if (!d.entries.length && !d.markers.length) {
+      <div class="cal-empty">No {{ kind().many }} on this day</div>
     }
   </div>
 }

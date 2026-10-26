@@ -1,5 +1,24 @@
 :host {
   display: block;
+  /* Shade of the money drawn: green for repayments, blue for capital in, amber for capital out */
+  --cal-rgb: var(--ion-color-success-rgb);
+  --cal-solid: var(--ion-color-success);
+  --cal-solid-text: var(--ion-color-success-contrast);
+  --cal-text: var(--app-pos);
+}
+
+:host([data-type='CAPITAL_INJECTION']) {
+  --cal-rgb: var(--ion-color-primary-rgb);
+  --cal-solid: var(--ion-color-primary);
+  --cal-solid-text: var(--ion-color-primary-contrast);
+  --cal-text: var(--app-info);
+}
+
+:host([data-type='CAPITAL_WITHDRAWAL']) {
+  --cal-rgb: var(--ion-color-warning-rgb);
+  --cal-solid: var(--ion-color-warning);
+  --cal-solid-text: var(--ion-color-warning-contrast);
+  --cal-text: var(--app-warn);
 }
 
 .cal-head {
@@ -28,10 +47,11 @@
   margin-top: 2px;
   font-size: 0.78rem;
   color: var(--app-text-2);
+}
 
-  .pos {
-    font-weight: 700;
-  }
+.cal-total {
+  font-weight: 700;
+  color: var(--cal-text);
 }
 
 .cal-grid {
@@ -75,17 +95,17 @@
   font-size: 0.6rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--app-pos);
+  color: var(--cal-text);
 }
 
-/* Collected amount: light to solid green */
-.lvl-1 { background: rgba(var(--ion-color-success-rgb), 0.12); }
-.lvl-2 { background: rgba(var(--ion-color-success-rgb), 0.24); }
-.lvl-3 { background: rgba(var(--ion-color-success-rgb), 0.4); }
-.lvl-4 { background: var(--ion-color-success); }
+/* Amount on the day: light to solid shade */
+.lvl-1 { background: rgba(var(--cal-rgb), 0.12); }
+.lvl-2 { background: rgba(var(--cal-rgb), 0.24); }
+.lvl-3 { background: rgba(var(--cal-rgb), 0.4); }
+.lvl-4 { background: var(--cal-solid); }
 
 .cal-day.lvl-4 {
-  color: var(--ion-color-success-contrast);
+  color: var(--cal-solid-text);
 
   .cal-amt {
     color: inherit;

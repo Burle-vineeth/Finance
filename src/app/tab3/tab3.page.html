@@ -83,10 +83,21 @@
     </div>
   }
 
-  <!-- Collections across all loans, day by day -->
+  <!-- Collections across all loans, or capital moved in and out, day by day -->
   @if (viewMode === 'calendar') {
+    <ion-segment [(ngModel)]="calendarType" mode="ios" class="app-seg seg-inline">
+      <ion-segment-button value="REPAYMENT">
+        <ion-label>Repayments</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="CAPITAL_INJECTION">
+        <ion-label>Injected</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="CAPITAL_WITHDRAWAL">
+        <ion-label>Withdrawn</ion-label>
+      </ion-segment-button>
+    </ion-segment>
     <div class="app-card">
-      <app-payment-calendar [transactions]="transactions" [loanNames]="loanNames" [heatmap]="true"></app-payment-calendar>
+      <app-payment-calendar [transactions]="transactions" [type]="calendarType" [loanNames]="loanNames" [heatmap]="true"></app-payment-calendar>
     </div>
   }
 

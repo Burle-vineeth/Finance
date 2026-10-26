@@ -2,17 +2,27 @@ import { Component, computed, input, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { chevronBack, chevronForward, arrowDown } from 'ionicons/icons';
+import { chevronBack, chevronForward, arrowDown, arrowUp } from 'ionicons/icons';
 
 export interface CalendarMarker {
   date?: string | Date | null;
   label: string;
 }
 
+/** Ledger transaction types the calendar can draw */
+export type CalendarType = 'REPAYMENT' | 'CAPITAL_INJECTION' | 'CAPITAL_WITHDRAWAL';
+
+// How each type reads on the calendar
+const KINDS: Record<CalendarType, { one: string; many: string; verb: string; title: string; moneyIn: boolean }> = {
+  REPAYMENT: { one: 'payment', many: 'payments', verb: 'collected', title: 'Repayment', moneyIn: true },
+  CAPITAL_INJECTION: { one: 'injection', many: 'injections', verb: 'injected', title: 'Capital injected', moneyIn: true },
+  CAPITAL_WITHDRAWAL: { one: 'withdrawal', many: 'withdrawals', verb: 'withdrawn', title: 'Capital withdrawn', moneyIn: false },
+};
+
 interface DayCell {
   key: string;
   day: number;
-  payments: any[];
+  entries: any[];
   total: number;
   markers: string[];
   level: number;
@@ -33,10 +43,14 @@ const twoDecimals = (value: number) => String(Number(value.toFixed(2)));
   templateUrl: './payment-calendar.component.html',
   styleUrls: ['./payment-calendar.component.scss'],
   imports: [CurrencyPipe, DatePipe, IonButton, IonIcon],
+  // Picks the shade for the type drawn (see the scss)
+  host: { '[attr.data-type]': 'type()' },
 })
 export class PaymentCalendarComponent {
-  /** Ledger transactions; only repayments are drawn on the calendar */
+  /** Ledger transactions; only those of `type` are drawn on the calendar */
   transactions = input<any[]>([]);
+  /** Which money to draw: repayments collected, or capital injected or withdrawn */
+  type = input<CalendarType>('REPAYMENT');
   /** Loan id -> client name. Repayments don't carry the client, so this names who paid. */
   loanNames = input<Record<string, string>>({});
   /** Other dates to flag on the calendar, e.g. when the loan was disbursed */
@@ -49,11 +63,13 @@ export class PaymentCalendarComponent {
   private pickedMonth = signal<Date | null>(null);
   selectedKey = signal<string | null>(null);
 
-  private repayments = computed(() => (this.transactions() || []).filter((t) => t.type === 'REPAYMENT'));
+  kind = computed(() => KINDS[this.type()]);
 
-  private repaymentsByDay = computed(() => {
+  private entries = computed(() => (this.transactions() || []).filter((t) => t.type === this.type()));
+
+  private entriesByDay = computed(() => {
     const byDay = new Map<string, any[]>();
-    for (const t of this.repayments()) {
+    for (const t of this.entries()) {
       const key = dayKey(new Date(t.date));
       const list = byDay.get(key);
       if (list) list.push(t); else byDay.set(key, [t]);
@@ -71,13 +87,13 @@ export class PaymentCalendarComponent {
     return byDay;
   });
 
-  /** Opens on this month, or on the month of the last payment when nothing has been paid since */
+  /** Opens on this month, or on the month of the last entry when there has been none since */
   month = computed(() => {
     const picked = this.pickedMonth();
     if (picked) return picked;
     const thisMonth = startOfMonth(new Date());
     let latest: Date | null = null;
-    for (const t of this.repayments()) {
+    for (const t of this.entries()) {
       const d = new Date(t.date);
       if (!latest || d > latest) latest = d;
     }
@@ -92,18 +108,18 @@ export class PaymentCalendarComponent {
     const month = first.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const todayKey = dayKey(new Date());
-    const byDay = this.repaymentsByDay();
+    const byDay = this.entriesByDay();
     const marks = this.markersByDay();
 
     const days: DayCell[] = [];
     for (let day = 1; day <= daysInMonth; day++) {
       const key = dayKey(new Date(year, month, day));
-      const payments = byDay.get(key) || [];
-      const total = payments.reduce((sum, t) => sum + (t.amount || 0), 0);
-      days.push({ key, day, payments, total, markers: marks.get(key) || [], level: 0, isToday: key === todayKey });
+      const entries = byDay.get(key) || [];
+      const total = entries.reduce((sum, t) => sum + (t.amount || 0), 0);
+      days.push({ key, day, entries, total, markers: marks.get(key) || [], level: 0, isToday: key === todayKey });
     }
 
-    // Heat levels 1-4 relative to the best day of the month (square root, so one large payment
+    // Heat levels 1-4 relative to the biggest day of the month (square root, so one large amount
     // doesn't wash out every other day); a single loan just marks paid days
     const max = Math.max(0, ...days.map((c) => c.total));
     for (const c of days) {
@@ -112,7 +128,7 @@ export class PaymentCalendarComponent {
     }
 
     const total = days.reduce((sum, c) => sum + c.total, 0);
-    const count = days.reduce((sum, c) => sum + c.payments.length, 0);
+    const count = days.reduce((sum, c) => sum + c.entries.length, 0);
     // Legend only for the markers that fall in this month
     const labels = new Set<string>();
     days.forEach((c) => c.markers.forEach((label) => labels.add(label)));
@@ -123,7 +139,7 @@ export class PaymentCalendarComponent {
   selectedDay = computed(() => this.grid().days.find((c) => c.key === this.selectedKey()) ?? null);
 
   constructor() {
-    addIcons({ 'chevron-back': chevronBack, 'chevron-forward': chevronForward, 'arrow-down': arrowDown });
+    addIcons({ 'chevron-back': chevronBack, 'chevron-forward': chevronForward, 'arrow-down': arrowDown, 'arrow-up': arrowUp });
   }
 
   shiftMonth(delta: number) {
@@ -141,7 +157,8 @@ export class PaymentCalendarComponent {
     this.selectedKey.set(this.selectedKey() === key ? null : key);
   }
 
-  paymentTitle(t: any): string {
+  entryTitle(t: any): string {
+    if (this.type() !== 'REPAYMENT') return t.notes || this.kind().title;
     const loanId = t.loan?._id || t.loan;
     return this.loanNames()[loanId] || t.client?.name || 'Repayment';
   }

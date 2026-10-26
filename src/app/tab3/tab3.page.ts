@@ -11,7 +11,7 @@ import { finalize } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
 import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
 import { localToday } from '../utils/dates';
-import { PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
+import { CalendarType, PaymentCalendarComponent } from '../components/payment-calendar/payment-calendar.component';
 import { arrowUpCircle, arrowDownCircle, trashOutline, arrowDown, arrowUp, receiptOutline, informationCircleOutline, swapHorizontalOutline, walletOutline, calendarOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 
@@ -39,6 +39,7 @@ export class Tab3Page implements OnInit {
   
   repaymentForm: FormGroup;
   viewMode: 'collect' | 'calendar' | 'ledger' = 'collect';
+  calendarType: CalendarType = 'REPAYMENT';
 
   // Set while a request is running so a second tap can't send it again
   isSavingRepayment = false;
