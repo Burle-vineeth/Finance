@@ -85,6 +85,12 @@ ion-card.loan-card {
   margin: -4px 0 12px;
 }
 
+.card-rate {
+  margin: -6px 0 12px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+}
+
 /* Loan details */
 .edit-loan-btn {
   font-weight: 600;
