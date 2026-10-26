@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -9,6 +9,7 @@ import { ApiService } from '../services/api.service';
 import { addIcons } from 'ionicons';
 import { cashOutline, trendingUpOutline, walletOutline, alertCircleOutline, calendarOutline, checkmarkCircleOutline, checkmarkDoneCircleOutline, settingsOutline, timeOutline, hourglassOutline, chevronForward } from 'ionicons/icons';
 import { dueBadge } from '../utils/due-status';
+import { CollectionTrendComponent } from '../components/collection-trend/collection-trend.component';
 
 @Component({
   selector: 'app-tab1',
@@ -16,12 +17,13 @@ import { dueBadge } from '../utils/due-status';
   styleUrls: ['tab1.page.scss'],
   imports: [
     CommonModule, RouterModule,
-    IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonIcon, IonButtons, IonButton
+    IonHeader, IonToolbar, IonTitle, IonContent, IonSpinner, IonIcon, IonButtons, IonButton, CollectionTrendComponent
   ],
 })
 export class Tab1Page implements OnInit {
   private apiService = inject(ApiService);
   private destroyRef = inject(DestroyRef);
+  private trend = viewChild(CollectionTrendComponent);
 
   metrics: any = null;
   isLoading = true;
@@ -59,6 +61,8 @@ export class Tab1Page implements OnInit {
   }
 
   loadDashboard() {
+    // The chart loads itself when it first appears; after that it refreshes with the rest of the page
+    this.trend()?.load();
     this.apiService.getApprovalSummary().subscribe({
       next: (res) => this.approvals = res.data,
       error: (err) => console.error(err)
