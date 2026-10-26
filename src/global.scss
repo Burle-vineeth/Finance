@@ -641,31 +641,44 @@ ion-button.app-btn {
   color: var(--app-text-2);
 }
 
-/* Bottom tab bar */
+/* Bottom tab bar: outline icons and grey labels; the selected tab turns blue, with a filled icon and a bold
+   label. Sizes are set here so the bar looks the same in iOS and Android mode. */
 ion-tab-bar {
   --background: var(--app-surface);
   --border: 1px solid var(--app-border);
-  --color: var(--app-text-3);
+  --color: var(--app-text-2);
   --color-selected: var(--ion-color-primary);
   height: 64px;
 }
 
 ion-tab-button {
-  font-weight: 600;
+  --ripple-color: transparent;
 
   ion-icon {
-    padding: 3px 18px;
-    border-radius: 999px;
-    transition: background-color 0.2s ease;
+    font-size: 24px;
   }
 
   ion-label {
-    margin-top: 3px;
+    margin-top: 4px;
     font-size: 0.72rem;
+    font-weight: 500;
   }
 
-  &.tab-selected ion-icon {
-    background: rgba(var(--ion-color-primary-rgb), 0.12);
+  &.tab-selected ion-label {
+    font-weight: 700;
+  }
+
+  /* Count on the icon's top-right corner, ringed so it stands off the icon */
+  ion-badge {
+    top: 3px;
+    inset-inline-start: calc(50% + 8px);
+    min-width: 18px;
+    height: 18px;
+    padding: 3px 5px;
+    border-radius: 9px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px var(--app-surface);
   }
 }
 
