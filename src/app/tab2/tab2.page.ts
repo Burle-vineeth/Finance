@@ -4,14 +4,16 @@ import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonItem, IonLabel, IonInput, IonSelect,
-  IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonModal, IonButtons, IonSpinner, IonDatetime
+  IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonModal, IonButtons, IonSpinner, IonDatetime,
+  IonList, IonItemSliding, IonItemOptions, IonItemOption, AlertController
 } from '@ionic/angular/standalone';
 import { finalize } from 'rxjs/operators';
 import { addIcons } from 'ionicons';
 import {
   arrowUpCircle, arrowDownCircle, documentTextOutline, walletOutline, cashOutline, chevronForward, arrowBack, call,
   arrowDown, arrowUp, receiptOutline, personAddOutline, callOutline, locationOutline, calendarOutline,
-  alertCircleOutline, checkmarkCircleOutline, checkmarkDoneCircleOutline, createOutline
+  alertCircleOutline, checkmarkCircleOutline, checkmarkDoneCircleOutline, createOutline, add, alarmOutline, trashOutline,
+  swapHorizontalOutline
 } from 'ionicons/icons';
 import { ApiService, LoanEdit } from '../services/api.service';
 import { EmptyStateComponent } from '../components/empty-state/empty-state.component';
@@ -30,13 +32,14 @@ import { localToday, localDay } from '../utils/dates';
     CommonModule, FormsModule, ReactiveFormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonItem, IonLabel, IonInput, IonSelect,
     IonSelectOption, IonButton, IonIcon, IonToast, IonSegment, IonSegmentButton, IonModal, IonButtons, IonSpinner, IonDatetime,
-    EmptyStateComponent, PaymentCalendarComponent, InstallmentPlanEditorComponent
+    IonList, IonItemSliding, IonItemOptions, IonItemOption, EmptyStateComponent, PaymentCalendarComponent, InstallmentPlanEditorComponent
   ]
 })
 export class Tab2Page implements OnInit {
   private apiService = inject(ApiService);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private alertController = inject(AlertController);
 
   viewMode: 'forms' | 'clients' | 'capital' | 'loans' = 'forms';
 
@@ -48,6 +51,8 @@ export class Tab2Page implements OnInit {
   
   capitalFilter: 'CAPITAL_INJECTION' | 'CAPITAL_WITHDRAWAL' | 'BUSINESS_EXPENSE' = 'CAPITAL_INJECTION';
   loanFilter: 'ACTIVE' | 'CLOSED' | 'DEFAULTED' = 'ACTIVE';
+  // How many loans each filter holds, for its tab
+  loanCounts = { ACTIVE: 0, CLOSED: 0, DEFAULTED: 0 };
   
   get filteredCapital() {
     return this.capitalTransactions.filter(t => t.type === this.capitalFilter);
@@ -85,6 +90,7 @@ export class Tab2Page implements OnInit {
           { date: loan?.startDate, label: 'Disbursed' },
           { date: loan?.collectionStartDate, label: 'Collection start' },
           ...plan.map((row: any) => ({ date: row.date, label: 'Installment due' })),
+          ...(loan?.lateFees || []).map((fee: any) => ({ date: fee.date, label: 'Late fee' })),
         ],
       };
     }
@@ -137,8 +143,104 @@ export class Tab2Page implements OnInit {
   }
 
   getCollectionPercentage(loan: any): number {
-    if (!loan || !loan.expectedReturnAmount) return 0;
-    return (loan.totalRepaid || 0) / loan.expectedReturnAmount;
+    const due = this.totalDue(loan);
+    return due ? (loan.totalRepaid || 0) / due : 0;
+  }
+
+  // --- Late fees: they add to what the client owes, and reopen a closed loan until paid ---
+  feeLoan: any = null;
+  feeForm = { amount: '', date: localToday(), note: '' };
+  isSavingFee = false;
+  removingFeeId: string | null = null;
+
+  /** A loan's late fees, added up */
+  feesOf(loan: any): number {
+    return (loan?.lateFees || []).reduce((sum: number, fee: any) => sum + fee.amount, 0);
+  }
+
+  /** All the loan asks of the client: the expected return and any late fees */
+  totalDue(loan: any): number {
+    return (loan?.expectedReturnAmount || 0) + this.feesOf(loan);
+  }
+
+  /** A fee can be removed while the loan still owes at least that much (the server's rule) */
+  canRemoveFee(loan: any, fee: any): boolean {
+    return (loan?.pendingAmount || 0) + 0.005 >= fee.amount;
+  }
+
+  hasRemovableFee(loan: any): boolean {
+    return (loan?.lateFees || []).some((fee: any) => this.canRemoveFee(loan, fee));
+  }
+
+  get feeAmount(): number {
+    return Number(String(this.feeForm.amount).replace(/,/g, '')) || 0;
+  }
+
+  get feeMinDate(): string {
+    return this.feeLoan ? localDay(this.feeLoan.startDate) : '';
+  }
+
+  openLateFee() {
+    this.feeLoan = this.selectedLoan;
+    this.feeForm = { amount: '', date: localToday(), note: '' };
+  }
+
+  closeLateFee() {
+    this.feeLoan = null;
+  }
+
+  formatFeeAmount(event: any) {
+    const digits = String(event.target.value ?? '').replace(/[^0-9]/g, '');
+    this.feeForm.amount = digits ? Number(digits).toLocaleString('en-IN') : '';
+  }
+
+  onFeeDate(value: any) {
+    if (typeof value === 'string') this.feeForm.date = value.substring(0, 10);
+  }
+
+  saveLateFee() {
+    const loan = this.feeLoan;
+    if (!loan || this.isSavingFee || this.feeAmount <= 0) return;
+    this.isSavingFee = true;
+    const note = this.feeForm.note.trim();
+    this.apiService.addLateFee(loan._id, { amount: this.feeAmount, date: this.feeForm.date, ...(note ? { note } : {}) }).pipe(
+      finalize(() => this.isSavingFee = false)
+    ).subscribe({
+      next: (res) => {
+        const owes = `₹${res.data.pendingAmount.toLocaleString('en-IN')}`;
+        this.displayToast(loan.status === 'CLOSED'
+          ? `Late fee added. The loan is open again: ${owes} to collect.`
+          : `Late fee added. ${loan.client?.name || 'The client'} now owes ${owes}.`);
+        this.closeLateFee();
+      },
+      error: (err) => this.displayToast(this.errorText(err, 'Could not add the late fee'), 'danger')
+    });
+  }
+
+  async confirmRemoveLateFee(loan: any, fee: any, row?: IonItemSliding) {
+    const alert = await this.alertController.create({
+      header: 'Remove this late fee?',
+      message: `₹${fee.amount.toLocaleString('en-IN')} from ${formatDate(fee.date, 'd MMM y', 'en-IN')}. Only for a fee added by mistake: it comes off what ${loan.client?.name || 'the client'} owes.`,
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Remove', role: 'destructive', handler: () => { this.removeLateFee(loan, fee); } }
+      ]
+    });
+    await alert.present();
+    // Kept: the row goes once the fee is removed. Cancelled: slide the row shut again
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'destructive') row?.close();
+  }
+
+  removeLateFee(loan: any, fee: any) {
+    if (this.removingFeeId) return;
+    this.removingFeeId = fee._id;
+    this.apiService.removeLateFee(loan._id, fee._id).pipe(
+      finalize(() => this.removingFeeId = null)
+    ).subscribe({
+      next: () => this.displayToast('Late fee removed'),
+      error: (err) => this.displayToast(this.errorText(err, 'Could not remove the late fee'), 'danger')
+    });
   }
 
   getLoanTransactions(loanId: string | undefined): any[] {
@@ -183,7 +285,11 @@ export class Tab2Page implements OnInit {
       'alert-circle-outline': alertCircleOutline,
       'checkmark-circle-outline': checkmarkCircleOutline,
       'checkmark-done-circle-outline': checkmarkDoneCircleOutline,
-      'create-outline': createOutline
+      'create-outline': createOutline,
+      'add': add,
+      'alarm-outline': alarmOutline,
+      'trash-outline': trashOutline,
+      'swap-horizontal-outline': swapHorizontalOutline
     });
 
     this.clientForm = this.fb.group({
@@ -243,6 +349,10 @@ export class Tab2Page implements OnInit {
       // Active loans get their label (overdue, due today, paid ahead...) from their installment schedule
       next: (res) => {
         this.allLoans = res.data.map((loan: any) => ({ ...loan, due: loan.schedule ? dueBadge(loan.schedule) : null }));
+        this.loanCounts = { ACTIVE: 0, CLOSED: 0, DEFAULTED: 0 };
+        this.allLoans.forEach((loan) => {
+          if (loan.status in this.loanCounts) this.loanCounts[loan.status as keyof typeof this.loanCounts]++;
+        });
         // Keep an open Loan details showing the fresh copy (e.g. after its details were edited)
         if (this.selectedLoan) {
           this.selectedLoan = this.allLoans.find((l) => l._id === this.selectedLoan._id) || this.selectedLoan;

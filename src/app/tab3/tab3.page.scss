@@ -1,16 +1,3 @@
-.swipe-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 4px 4px;
-  font-size: 0.78rem;
-  color: var(--app-text-3);
-
-  ion-icon {
-    font-size: 1rem;
-  }
-}
-
 .swipe-hint + ion-list .group-label:first-child {
   margin-top: 12px;
 }
