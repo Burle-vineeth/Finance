@@ -72,6 +72,13 @@
           @if (f.totalEquity > 0) {
             <div class="hero-pct">{{ (f.cashOnHand / f.totalEquity) | percent:'1.0-1' }} of equity</div>
           }
+          <!-- The same cash, by whose hand it is in: staff collect and hand it over later -->
+          @if (f.cashWithStaff !== undefined) {
+            <div class="hero-hands">
+              <span>In your hand <strong class="num">{{ f.cashInHand | currency:'INR':'symbol':'1.0-0' }}</strong></span>
+              <span>With staff <strong class="num">{{ f.cashWithStaff | currency:'INR':'symbol':'1.0-0' }}</strong></span>
+            </div>
+          }
         </div>
         <div class="hero-split-end">
           <div class="legend"><i class="dot dot-market"></i>In market</div>

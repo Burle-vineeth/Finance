@@ -1,3 +1,31 @@
 .swipe-hint + ion-list .group-label:first-child {
   margin-top: 12px;
 }
+
+/* "Money is with  [Staff | Me]" in the repayment form */
+.cash-with {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 2px 6px;
+}
+
+.cash-with-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--app-text-2);
+}
+
+/* Staff / Me need less room than the usual small switch, so the question stays on one line */
+.cash-with ion-segment.seg-mini {
+  width: 136px;
+}
+
+/* A plain tip under the money-with-staff form (not a warning) */
+.cash-tip {
+  margin: 2px 4px 4px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+}

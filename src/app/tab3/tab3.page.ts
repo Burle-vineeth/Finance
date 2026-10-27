@@ -34,10 +34,15 @@ export class Tab3Page implements OnInit {
 
   activeLoans: any[] = [];
   transactions: any[] = [];
+  // Where the cash is: in your hand, and with staff (collected by them, not yet handed over)
+  cash = { total: 0, withStaff: 0, inHand: 0 };
   // Loan id -> client name for every loan, so the calendar can say who paid (repayments don't carry the client)
   loanNames: Record<string, string> = {};
   
   repaymentForm: FormGroup;
+  // Cash moving between hands: ADMIN is received from staff, STAFF is moved to staff
+  transferForm: FormGroup;
+  isSavingTransfer = false;
   viewMode: 'collect' | 'calendar' | 'ledger' = 'collect';
   calendarType: CalendarType = 'REPAYMENT';
 
@@ -59,7 +64,15 @@ export class Tab3Page implements OnInit {
     this.repaymentForm = this.fb.group({
       loan: ['', Validators.required],
       amount: ['', [Validators.required, Validators.min(1)]],
-      date: [localToday(), Validators.required]
+      date: [localToday(), Validators.required],
+      // Usually a staff member collects it, so the money starts in their hand
+      cashWith: ['STAFF', Validators.required]
+    });
+    this.transferForm = this.fb.group({
+      cashWith: ['ADMIN', Validators.required],
+      amount: ['', Validators.required],
+      date: [localToday(), Validators.required],
+      notes: ['']
     });
   }
 
@@ -76,7 +89,15 @@ export class Tab3Page implements OnInit {
     this.loadData();
   }
 
+  loadCash() {
+    this.apiService.getCashSplit().subscribe({
+      next: (res) => this.cash = res.data,
+      error: (err) => console.error('Failed to load cash split', err)
+    });
+  }
+
   loadData() {
+    this.loadCash();
     this.loadActiveLoans();
     this.loadLedger();
   }
@@ -113,6 +134,7 @@ export class Tab3Page implements OnInit {
       loan: this.repaymentForm.value.loan,
       amount: Number(rawAmount),
       date: this.repaymentForm.value.date,
+      cashWith: this.repaymentForm.value.cashWith,
       notes: 'Logged via App'
     };
 
@@ -123,13 +145,49 @@ export class Tab3Page implements OnInit {
       next: (res) => {
         this.displayToast('Repayment logged successfully! Dashboard updated.');
         this.repaymentForm.reset({
-          date: localToday()
+          date: localToday(),
+          cashWith: 'STAFF'
         });
       },
       error: (err) => {
         this.displayToast('Error logging repayment', 'danger');
       }
     });
+  }
+
+  /** The amount entered for a cash transfer, without its commas */
+  get transferAmount(): number {
+    return Number(String(this.transferForm.value.amount || '').replace(/,/g, '')) || 0;
+  }
+
+  onRecordTransfer() {
+    if (this.transferForm.invalid || this.isSavingTransfer || this.transferAmount <= 0) return;
+    const { cashWith, date, notes } = this.transferForm.value;
+    const amount = this.transferAmount;
+    this.isSavingTransfer = true;
+    this.apiService.addTransaction({ type: 'CASH_TRANSFER', amount, date, cashWith, notes: notes?.trim() || undefined }).pipe(
+      finalize(() => this.isSavingTransfer = false)
+    ).subscribe({
+      next: () => {
+        const rupees = `₹${amount.toLocaleString('en-IN')}`;
+        this.displayToast(cashWith === 'ADMIN' ? `Saved: staff gave you ${rupees}` : `Saved: you gave staff ${rupees}`);
+        this.transferForm.reset({ cashWith, amount: '', date: localToday(), notes: '' });
+      },
+      error: (err) => this.displayToast(err?.error?.error || 'Could not record it', 'danger')
+    });
+  }
+
+  /** Who paid, and who collected it: Ramesh Kumar · collected by Ravi, or Ramesh Kumar · collected by staff */
+  repaymentSub(t: any): string {
+    // Repayments logged here don't carry the client; their loan says who it is
+    const name = t.client?.name || this.loanNames[t.loan?._id || t.loan];
+    const hand = t.collectedBy?.name ? `collected by ${t.collectedBy.name}` : t.cashWith === 'STAFF' ? 'collected by staff' : '';
+    return [name, hand].filter(Boolean).join(' · ');
+  }
+
+  /** How a cash transfer reads in the ledger */
+  transferTitle(t: any): string {
+    return t.cashWith === 'STAFF' ? 'I gave staff' : 'Staff gave me';
   }
 
   formatCurrencyInput(event: any, formGroup: FormGroup, controlName: string) {
@@ -173,7 +231,7 @@ export class Tab3Page implements OnInit {
         this.displayToast('Transaction successfully undone.');
       },
       error: (err) => {
-        this.displayToast('Error undoing transaction', 'danger');
+        this.displayToast(err?.error?.error || 'Error undoing transaction', 'danger');
       }
     });
   }

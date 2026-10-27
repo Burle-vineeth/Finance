@@ -131,6 +131,11 @@ export class ApiService {
     return this.sharedGet(`${this.baseUrl}/transactions`);
   }
 
+  /** Where the cash is: { total, withStaff, inHand } */
+  getCashSplit(): Observable<any> {
+    return this.sharedGet(`${this.baseUrl}/transactions/cash`);
+  }
+
   addTransaction(transactionData: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/transactions`, transactionData).pipe(
       tap(() => this.notifyDataChanged())
