@@ -1,0 +1,167 @@
+:host {
+  display: block;
+}
+
+/* ‹ [Month · October 2026 ⌄] › */
+.rp {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: -6px -8px 12px;
+}
+
+.rp-step {
+  --color: var(--app-text-2);
+  flex: none;
+  margin: 0;
+
+  /* All time and a custom range don't step: the arrows keep their room, so the middle stays centred */
+  &.rp-off {
+    visibility: hidden;
+  }
+}
+
+.rp-current {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  color: var(--app-text);
+  background: var(--app-surface-2);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:active {
+    background: rgba(var(--ion-color-primary-rgb), 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(var(--ion-color-primary-rgb), 0.5);
+    outline-offset: 2px;
+  }
+}
+
+.rp-kind {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--app-text-3);
+}
+
+.rp-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  font-size: 0.98rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  ion-icon {
+    flex: none;
+    font-size: 0.9rem;
+    color: var(--ion-color-primary);
+  }
+}
+
+/* The sheet */
+.rs {
+  padding: 8px 16px calc(16px + var(--ion-safe-area-bottom, 0px));
+  background: var(--app-surface);
+}
+
+.rs-title {
+  margin: 10px 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--app-text-3);
+}
+
+.rs-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--app-text);
+  background: transparent;
+  cursor: pointer;
+
+  &:active {
+    background: var(--app-surface-2);
+  }
+
+  /* The picked one: a light wash, a blue name and a bold tick */
+  &.on {
+    background: rgba(var(--ion-color-primary-rgb), 0.08);
+
+    .rs-name {
+      color: var(--ion-color-primary);
+    }
+
+    .rs-check {
+      visibility: visible;
+      color: var(--ion-color-primary);
+    }
+  }
+}
+
+.rs-name {
+  /* Wide enough for "Custom range", so every row's value starts in line */
+  flex: none;
+  width: 118px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.rs-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--app-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rs-check {
+  flex: none;
+  font-size: 1.1rem;
+  visibility: hidden;
+}
+
+/* "Custom range" shows its chevron even when not picked, so it reads as opening something */
+.rs-row:last-child .rs-check {
+  visibility: visible;
+  color: var(--app-text-3);
+}
+
+.rs-rule {
+  height: 1px;
+  margin: 6px 12px;
+  background: var(--app-border);
+}
+
+.rs-custom {
+  margin: 8px 0 0;
+
+  .field-row {
+    margin-bottom: 12px;
+  }
+}
+
+.rs-apply {
+  margin: 0;
+}

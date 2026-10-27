@@ -1,0 +1,213 @@
+.score-card,
+.parts-card {
+  transition: opacity 0.2s ease;
+
+  /* A new range keeps the last score on screen, dimmed, until its own arrives */
+  &.is-loading {
+    opacity: 0.55;
+  }
+}
+
+.score-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+/* The one figure the page leads with */
+.score-number {
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--app-text);
+}
+
+.score-out-of {
+  margin-left: 4px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--app-text-3);
+}
+
+.score-label {
+  font-size: 0.85rem;
+}
+
+.score-change {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--app-text-2);
+}
+
+.score-note {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--app-text-3);
+}
+
+.score-empty {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 12px;
+  font-size: 0.85rem;
+  color: var(--app-text-3);
+}
+
+.part + .part {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--app-border);
+}
+
+.part-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.part-name {
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.part-points {
+  /* As a row the spaces between its pieces collapse, so the gap puts them back: +3.4  30 / 30 */
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-weight: 700;
+  color: var(--app-text);
+}
+
+/* The part's change on the period compared with: +5 green, −2.3 red, a grey dash for none (the sign says it
+   without colour) */
+.part-change {
+  align-self: center;
+  margin-right: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--app-text-2);
+  background: var(--app-surface-2);
+
+  &.up {
+    color: var(--app-pos);
+    background: rgba(var(--ion-color-success-rgb), 0.12);
+  }
+
+  &.down {
+    color: var(--app-neg);
+    background: rgba(var(--ion-color-danger-rgb), 0.11);
+  }
+}
+
+/* How much of the part's points it earned: green from 80, amber from 50, red below */
+.part-bar {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--app-surface-2);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.4s ease;
+  }
+
+  .fill-good { background: var(--ion-color-success); }
+  .fill-fair { background: var(--ion-color-warning); }
+  .fill-poor { background: var(--ion-color-danger); }
+}
+
+.part-summary {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+}
+
+.reasons-card {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.reason {
+  display: flex;
+  gap: 10px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--app-text);
+
+  & + .reason {
+    margin-top: 12px;
+  }
+}
+
+.reason-icon {
+  flex: none;
+  margin-top: 1px;
+  font-size: 1.1rem;
+}
+
+.reason-good {
+  color: var(--app-pos);
+}
+
+.reason-bad {
+  color: var(--app-neg);
+}
+
+.reason-detail {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--app-text-2);
+}
+
+.how-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 4px 10px;
+  padding: 6px 0;
+  border: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--app-info);
+  background: none;
+  cursor: pointer;
+}
+
+.how-card {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--app-text-2);
+
+  p {
+    margin: 0;
+  }
+
+  ul {
+    margin: 8px 0;
+    padding-left: 18px;
+  }
+
+  li + li {
+    margin-top: 6px;
+  }
+
+  strong {
+    color: var(--app-text);
+  }
+}

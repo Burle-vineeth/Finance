@@ -57,6 +57,19 @@ export class ApiService {
     return this.sharedGet(`${this.baseUrl}/dashboard`);
   }
 
+  /** The business score for a range (without one, from the first loan to today), compared with another range */
+  getBusinessScore(range: { from?: string; to?: string }, compare: { from: string; to: string } | null): Observable<any> {
+    const query = new URLSearchParams();
+    if (range.from) query.set('from', range.from);
+    if (range.to) query.set('to', range.to);
+    if (compare) {
+      query.set('compareFrom', compare.from);
+      query.set('compareTo', compare.to);
+    }
+    const qs = query.toString();
+    return this.sharedGet(`${this.baseUrl}/dashboard/score${qs ? `?${qs}` : ''}`);
+  }
+
   /** Money expected and collected each day from one YYYY-MM-DD to another; without them, from the first loan to today */
   getCollectionTrend(from?: string, to?: string): Observable<any> {
     const query = new URLSearchParams();
@@ -116,6 +129,11 @@ export class ApiService {
   // --- Transactions ---
   getTransactions(): Observable<any> {
     return this.sharedGet(`${this.baseUrl}/transactions`);
+  }
+
+  /** Where the cash is: { total, withStaff, inHand } */
+  getCashSplit(): Observable<any> {
+    return this.sharedGet(`${this.baseUrl}/transactions/cash`);
   }
 
   addTransaction(transactionData: any): Observable<any> {

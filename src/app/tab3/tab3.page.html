@@ -61,6 +61,18 @@
             </ion-datetime>
           </ng-template>
         </ion-modal>
+        <!-- Whose hand the money is in now: usually a staff member collected it -->
+        <div class="cash-with">
+          <span class="cash-with-label">Who has the money?</span>
+          <ion-segment formControlName="cashWith" mode="ios" class="app-seg seg-mini">
+            <ion-segment-button value="STAFF">
+              <ion-label>Staff</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="ADMIN">
+              <ion-label>Me</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </div>
         @if (activeLoans.length === 0) {
           <p class="form-hint">There are no active loans to collect from.</p>
         }
@@ -70,6 +82,63 @@
             <ion-spinner slot="start" name="crescent"></ion-spinner>
           }
           Log payment
+        </ion-button>
+      </form>
+    </div>
+
+    <!-- Cash staff collected and hand over later: what they hold, and moving it between hands -->
+    <div class="app-card">
+      <div class="card-head">
+        <div class="icon-tile tile-capital"><ion-icon name="swap-horizontal-outline"></ion-icon></div>
+        <div>
+          <h3>Money with staff</h3>
+          <p>Staff have <strong class="num">{{ cash.withStaff | currency:'INR':'symbol':'1.0-2' }}</strong> ·
+            you have <strong class="num">{{ cash.inHand | currency:'INR':'symbol':'1.0-2' }}</strong></p>
+        </div>
+      </div>
+      <form [formGroup]="transferForm" (ngSubmit)="onRecordTransfer()">
+        <ion-segment formControlName="cashWith" mode="ios" class="app-seg seg-inline">
+          <ion-segment-button value="ADMIN">
+            <ion-label>Staff gave me</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="STAFF">
+            <ion-label>I gave staff</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+        <div class="field-row">
+          <ion-item lines="none" class="field">
+            <ion-input label="Amount" labelPlacement="stacked" formControlName="amount" type="text" inputmode="numeric"
+              placeholder="₹1,000" (ionInput)="formatCurrencyInput($event, transferForm, 'amount')"></ion-input>
+          </ion-item>
+          <ion-item lines="none" class="field date-field" button [detail]="false" id="transfer-date-trigger">
+            <div class="date-text">
+              <span class="date-label">Date</span>
+              <span class="date-value">{{ transferForm.value.date | date:'d MMM y' }}</span>
+            </div>
+            <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
+          </ion-item>
+        </div>
+        <!-- Not keepContentsMounted: a calendar kept alive while hidden reopens showing the wrong month's days -->
+        <ion-modal #transferDateModal trigger="transfer-date-trigger" class="date-dialog">
+          <ng-template>
+            <ion-datetime mode="ios" presentation="date" locale="en-IN" formControlName="date" [showDefaultTitle]="true"
+              (ionChange)="transferDateModal.dismiss()">
+              <span slot="title">Date</span>
+            </ion-datetime>
+          </ng-template>
+        </ion-modal>
+        <ion-item lines="none" class="field">
+          <ion-input label="Note (optional)" labelPlacement="stacked" formControlName="notes" placeholder="e.g. Evening collection"></ion-input>
+        </ion-item>
+        @if (transferForm.value.cashWith === 'STAFF') {
+          <p class="cash-tip">Money you gave a staff member. You can also use it to correct how much staff have.</p>
+        }
+        <ion-button expand="block" class="app-btn" color="primary" type="submit"
+          [disabled]="transferForm.invalid || transferAmount <= 0 || isSavingTransfer">
+          @if (isSavingTransfer) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          }
+          Save
         </ion-button>
       </form>
     </div>
@@ -106,7 +175,7 @@
     @if (transactions.length > 0) {
       <p class="swipe-hint">
         <ion-icon name="swap-horizontal-outline"></ion-icon>
-        Swipe a repayment or expense to the left to undo it
+        Swipe a repayment, an expense or money between you and staff to the left to undo it
       </p>
       <ion-list class="plain-list">
         @for (t of transactions; track trackById($index, t); let i = $index, last = $last) {
@@ -114,6 +183,8 @@
           @let firstOfDay = i === 0 || day !== (transactions[i - 1].date | date:'yyyy-MM-dd');
           @let lastOfDay = last || day !== (transactions[i + 1].date | date:'yyyy-MM-dd');
           @let moneyIn = t.type === 'REPAYMENT' || t.type === 'CAPITAL_INJECTION';
+          <!-- Cash moving between your hand and the staff's: the business's total doesn't change -->
+          @let transfer = t.type === 'CASH_TRANSFER';
 
           @if (firstOfDay) {
             <div class="group-label">{{ t.date | date:'EEE, d MMM y' }}</div>
@@ -123,22 +194,24 @@
               <div slot="start" class="icon-tile"
                 [class.tile-in]="t.type === 'REPAYMENT'"
                 [class.tile-out]="t.type === 'DISBURSEMENT'"
-                [class.tile-capital]="t.type === 'CAPITAL_INJECTION'"
+                [class.tile-capital]="t.type === 'CAPITAL_INJECTION' || transfer"
                 [class.tile-withdraw]="t.type === 'CAPITAL_WITHDRAWAL'"
                 [class.tile-expense]="t.type === 'BUSINESS_EXPENSE'">
-                <ion-icon [name]="t.type === 'BUSINESS_EXPENSE' ? 'receipt-outline' : (moneyIn ? 'arrow-down' : 'arrow-up')"></ion-icon>
+                <ion-icon [name]="transfer ? 'swap-horizontal-outline' : t.type === 'BUSINESS_EXPENSE' ? 'receipt-outline' : (moneyIn ? 'arrow-down' : 'arrow-up')"></ion-icon>
               </div>
               <div class="row-main">
-                <div class="row-title">{{ formatType(t.type) }}</div>
-                @if (t.client?.name) {
-                  <div class="row-sub">{{ t.client.name }}@if (t.collectedBy?.name) { · by {{ t.collectedBy.name }}}</div>
+                <div class="row-title">{{ transfer ? transferTitle(t) : formatType(t.type) }}</div>
+                @if (t.type === 'REPAYMENT' && repaymentSub(t)) {
+                  <div class="row-sub">{{ repaymentSub(t) }}</div>
+                } @else if (t.client?.name) {
+                  <div class="row-sub">{{ t.client.name }}</div>
                 } @else if (t.notes && t.type !== 'REPAYMENT' && t.type !== 'DISBURSEMENT') {
                   <div class="row-sub">{{ t.notes }}</div>
                 }
               </div>
               <div slot="end" class="row-end">
                 <div class="row-amount" [class.pos]="moneyIn">
-                  {{ moneyIn ? '+' : '−' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
+                  {{ transfer ? '' : moneyIn ? '+' : '−' }}{{ t.amount | currency:'INR':'symbol':'1.0-2' }}
                 </div>
                 @if (t.type === 'REPAYMENT') {
                   <div class="row-meta">
@@ -152,7 +225,7 @@
               </div>
             </ion-item>
 
-            @if (t.type === 'REPAYMENT' || t.type === 'BUSINESS_EXPENSE') {
+            @if (t.type === 'REPAYMENT' || t.type === 'BUSINESS_EXPENSE' || transfer) {
               <ion-item-options side="end">
                 <ion-item-option color="danger" (click)="confirmDeleteTransaction(t._id)">
                   @if (deletingId === t._id) {

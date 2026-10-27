@@ -1,0 +1,147 @@
+<ion-header [translucent]="true" class="ion-no-border app-header" mode="md">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tab1"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Business score</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="app-card score-card" [class.is-loading]="loading() && data()">
+    <app-range-picker [allTimeFrom]="data()?.firstLoanDay" (rangeChange)="onRange($event)"></app-range-picker>
+
+    @if (data(); as d) {
+      @if (d.notStarted) {
+        <div class="score-empty">This period hasn't started yet.</div>
+      } @else if (d.total === null || d.total === undefined) {
+        <div class="score-empty">Nothing happened in this period to score.</div>
+      } @else {
+        <div class="score-hero">
+          <div class="score-number">{{ d.total }}<span class="score-out-of">/100</span></div>
+          <span class="chip score-label {{ look(d.label).chip }}">
+            <ion-icon [name]="look(d.label).icon"></ion-icon>
+            {{ d.label }}
+          </span>
+        </div>
+        @if (change(); as c) {
+          <div class="score-change" [class.pos]="c.points > 0" [class.neg]="c.points < 0">
+            <ion-icon [name]="c.points > 0 ? 'arrow-up' : c.points < 0 ? 'arrow-down' : 'remove-outline'"></ion-icon>
+            <span>
+              @if (c.points === 0) {
+                Same as {{ c.label }}
+              } @else {
+                {{ c.points > 0 ? c.points : -c.points }} {{ (c.points > 0 ? c.points : -c.points) === 1 ? 'point' : 'points' }}
+                {{ c.points > 0 ? 'up' : 'down' }} on {{ c.label }}
+              }
+            </span>
+          </div>
+        }
+        @if (d.measuredTo && d.measuredTo < d.to) {
+          <div class="score-note">Measured up to today, {{ showDay(d.measuredTo, 'd MMM') }}.</div>
+        }
+      }
+    } @else if (error()) {
+      <div class="score-empty">{{ error() }}</div>
+    } @else {
+      <div class="score-empty"><ion-spinner name="crescent"></ion-spinner></div>
+    }
+  </div>
+
+  @if (data(); as d) {
+    @if (d.parts && d.total !== null && d.total !== undefined) {
+      <div class="section-label">
+        <h2>How it adds up</h2>
+        <!-- The parts' changes compare with the same period as the score's -->
+        @if (d.previous && range()?.compare; as compare) {
+          <span>vs {{ compare.label }}</span>
+        }
+      </div>
+      <div class="app-card parts-card" [class.is-loading]="loading()">
+        @for (p of d.parts; track p.key) {
+          <div class="part">
+            <div class="part-top">
+              <span class="part-name">{{ p.name }}</span>
+              <span class="part-points num">
+                @if (p.change !== null) {
+                  <span class="part-change" [class.up]="p.change > 0" [class.down]="p.change < 0"
+                    [attr.aria-label]="changeText(p.change)">{{ signed(p.change) }}</span>
+                }
+                @if (p.points === null) {
+                  not scored
+                } @else {
+                  {{ p.points | number:'1.0-1' }} <span class="muted">/ {{ p.weight }}</span>
+                }
+              </span>
+            </div>
+            <div class="part-bar" role="img" [attr.aria-label]="p.name + ': ' + (p.score === null ? 'not scored' : p.score + ' out of 100')">
+              <span class="fill-{{ band(p.score) }}" [style.width.%]="p.score ?? 0"></span>
+            </div>
+            <div class="part-summary">{{ p.summary }}</div>
+          </div>
+        }
+      </div>
+
+      @if (d.helping?.length) {
+        <div class="section-label"><h2>What's helping</h2></div>
+        <div class="app-card reasons-card">
+          @for (r of d.helping; track $index) {
+            <div class="reason">
+              <ion-icon name="checkmark-circle" class="reason-icon reason-good"></ion-icon>
+              <div>
+                <div>{{ r.text }}</div>
+                @for (line of r.details; track $index) {
+                  <div class="reason-detail">{{ line }}</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (d.hurting?.length) {
+        <div class="section-label"><h2>What's hurting</h2></div>
+        <div class="app-card reasons-card">
+          @for (r of d.hurting; track $index) {
+            <div class="reason">
+              <ion-icon name="alert-circle" class="reason-icon reason-bad"></ion-icon>
+              <div>
+                <div>{{ r.text }}</div>
+                @for (line of r.details; track $index) {
+                  <div class="reason-detail">{{ line }}</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <button type="button" class="how-toggle" (click)="showHow.set(!showHow())" [attr.aria-expanded]="showHow()">
+        How the score is worked out
+        <ion-icon [name]="showHow() ? 'chevron-up' : 'chevron-down'"></ion-icon>
+      </button>
+      @if (showHow()) {
+        <div class="app-card how-card">
+          <p>Five parts, each scored out of 100 and weighted. Each gives partial points: they fall evenly from full marks
+            at its best to none at its worst. A part with nothing to measure is left out, and the rest scaled to 100.</p>
+          <ul>
+            <li><strong>Collections (30)</strong>: payments due in the period, installments and late fees, made within
+              {{ d.settings.graceDays }} days. 100% scores full marks, 0% none.</li>
+            <li><strong>Overdue risk (25)</strong>: money overdue on the last day, as a share of the money lent out then.
+              None overdue scores full marks, 50% or more none.</li>
+            <li><strong>Earnings (20)</strong>: the interest the lent money earned in the period, after expenses, as a
+              yearly rate. {{ d.settings.targetYearlyRate }}% a year or more scores full marks, 0% or less none. Each
+              payment counts its loan's share of interest.</li>
+            <li><strong>Money at work (15)</strong>: how much of the money in the business was lent out rather than
+              sitting as cash, on average. 90% or more scores full marks, nothing lent none.</li>
+            <li><strong>Spread of risk (10)</strong>: how much of the money lent sits with the biggest borrower on the last
+              day. 25% or less scores full marks, everything with one borrower none.</li>
+          </ul>
+          <p>80 and over is Strong, 60 Good, 40 Needs attention, below that At risk. A short range, like a week, swings
+            more: one payment more or less moves it a lot. Past periods use each loan's current terms, so a loan edited
+            later counts with its new schedule.</p>
+        </div>
+      }
+    }
+  }
+</ion-content>

@@ -128,6 +128,20 @@
   }
 }
 
+/* Cash on hand by whose hand it is in */
+.hero-hands {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  opacity: 0.85;
+
+  strong {
+    font-weight: 700;
+  }
+}
+
 .hero-pct {
   margin-top: 1px;
   font-size: 0.72rem;
@@ -257,4 +271,28 @@
 .empty-inline {
   text-align: center;
   color: var(--app-text-2);
+}
+
+/* The business score's way in: a speedometer dial (240°), red to amber to green, its needle in the green. Drawn in
+   a square 24px box like the toolbar's other icons, as wide as the gear beside it (21px) and centred the same way */
+.score-gauge {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+
+  .g-low { stroke: var(--ion-color-danger); }
+  .g-mid { stroke: var(--ion-color-warning); }
+  .g-high { stroke: var(--ion-color-success); }
+
+  .g-needle {
+    stroke: currentColor;
+    stroke-width: 2.4;
+  }
+
+  .g-hub {
+    fill: currentColor;
+    stroke: none;
+  }
 }

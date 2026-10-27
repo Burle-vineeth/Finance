@@ -6,41 +6,6 @@
   --trend-collected: #16a34a;
 }
 
-/* The ranges: a row of chips that scrolls sideways, the picked one solid blue. The strip runs to the screen's
-   edges (the page has 16px padding), so chips slide in and out at the edge rather than being cut off inside it;
-   its own padding lines the first chip up with the card and leaves room for the chips' shadows. */
-.trend-ranges {
-  --background: transparent;
-  gap: 8px;
-  width: auto;
-  margin: -4px -16px 6px;
-  padding: 4px 16px;
-  border-radius: 0;
-
-  ion-segment-button {
-    /* No sliding pill and no separators: each chip draws itself */
-    --indicator-color: transparent;
-    --indicator-box-shadow: none;
-    --border-width: 0;
-    --border-radius: 999px;
-    --background: var(--app-surface);
-    --background-checked: var(--ion-color-primary);
-    --color: var(--app-text-2);
-    --color-checked: var(--ion-color-primary-contrast);
-    --padding-start: 16px;
-    --padding-end: 16px;
-    min-width: auto;
-    min-height: 36px;
-    margin: 0;
-    border-radius: 999px;
-    box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.28);
-
-    &.segment-button-checked {
-      box-shadow: 0 1px 4px rgba(var(--ion-color-primary-rgb), 0.35);
-    }
-  }
-}
-
 .trend-card {
   transition: opacity 0.2s ease;
 
@@ -48,31 +13,6 @@
   &.is-loading {
     opacity: 0.55;
   }
-}
-
-.trend-period {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 36px;
-  margin: -6px -8px 8px;
-
-  ion-button {
-    --color: var(--app-text-2);
-    margin: 0;
-  }
-}
-
-.trend-period-label {
-  flex: 1;
-  font-size: 1rem;
-  font-weight: 700;
-  text-align: center;
-  color: var(--app-text);
-}
-
-.trend-custom {
-  margin-bottom: 12px;
 }
 
 .trend-summary {

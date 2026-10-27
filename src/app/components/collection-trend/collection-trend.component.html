@@ -1,67 +1,5 @@
-<!-- The range: all time, a week (Monday to Sunday), a month, quarter, half year or year (calendar), or any two days -->
-<ion-segment [value]="kind()" (ionChange)="setKind($any($event).detail.value)" mode="ios" [scrollable]="true"
-  class="app-seg seg-inline trend-ranges">
-  @for (r of ranges; track r.kind) {
-    <ion-segment-button [value]="r.kind">
-      <ion-label>{{ r.label }}</ion-label>
-    </ion-segment-button>
-  }
-</ion-segment>
-
 <div class="app-card trend-card" [class.is-loading]="loading() && data()">
-  @switch (kind()) {
-    @case ('custom') {
-      <div class="field-row trend-custom">
-        <ion-item lines="none" class="field date-field" button [detail]="false" id="trend-from-trigger">
-          <div class="date-text">
-            <span class="date-label">From</span>
-            <span class="date-value">{{ showDay(customFrom(), 'd MMM yy') }}</span>
-          </div>
-          <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
-        </ion-item>
-        <ion-item lines="none" class="field date-field" button [detail]="false" id="trend-to-trigger">
-          <div class="date-text">
-            <span class="date-label">To</span>
-            <span class="date-value">{{ showDay(customTo(), 'd MMM yy') }}</span>
-          </div>
-          <ion-icon slot="end" name="calendar-outline" class="date-icon"></ion-icon>
-        </ion-item>
-      </div>
-      <!-- Not keepContentsMounted: a calendar kept alive while hidden reopens showing the wrong month's days -->
-      <ion-modal #fromModal trigger="trend-from-trigger" class="date-dialog">
-        <ng-template>
-          <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="customFrom()" [showDefaultTitle]="true"
-            (ionChange)="setCustom('from', $event.detail.value); fromModal.dismiss()">
-            <span slot="title">From</span>
-          </ion-datetime>
-        </ng-template>
-      </ion-modal>
-      <ion-modal #toModal trigger="trend-to-trigger" class="date-dialog">
-        <ng-template>
-          <ion-datetime mode="ios" presentation="date" locale="en-IN" [value]="customTo()" [showDefaultTitle]="true"
-            (ionChange)="setCustom('to', $event.detail.value); toModal.dismiss()">
-            <span slot="title">To</span>
-          </ion-datetime>
-        </ng-template>
-      </ion-modal>
-    }
-    @case ('all') {
-      <div class="trend-period">
-        <div class="trend-period-label">{{ allTimeLabel() }}</div>
-      </div>
-    }
-    @default {
-      <div class="trend-period">
-        <ion-button fill="clear" size="small" (click)="shift(-1)" aria-label="Previous period">
-          <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
-        </ion-button>
-        <div class="trend-period-label">{{ periodLabel() }}</div>
-        <ion-button fill="clear" size="small" (click)="shift(1)" aria-label="Next period">
-          <ion-icon slot="icon-only" name="chevron-forward"></ion-icon>
-        </ion-button>
-      </div>
-    }
-  }
+  <app-range-picker [allTimeFrom]="data()?.firstLoanDay" (rangeChange)="onRange($event)"></app-range-picker>
 
   <!-- Always here, so the chart knows how wide it can be -->
   <div #measure class="trend-body">
@@ -92,7 +30,7 @@
       @if (rows().length) {
         @if (view() === 'chart') {
           @if (chart(); as c) {
-            <div class="trend-plot" tabindex="0" [attr.aria-label]="'Expected and collected, ' + (kind() === 'all' ? allTimeLabel() : periodLabel()) + '. Use the arrow keys to read each point.'"
+            <div class="trend-plot" tabindex="0" [attr.aria-label]="'Expected and collected, ' + range()?.label + '. Use the arrow keys to read each point.'"
               (pointerdown)="track($event)" (pointermove)="track($event)" (pointerleave)="clearTrack($event)"
               (keydown)="moveWithKeys($event)" (blur)="active.set(null)">
               <svg [attr.width]="c.width" [attr.height]="chartHeight" aria-hidden="true">
