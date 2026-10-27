@@ -1,16 +1,11 @@
-import { AfterViewInit, Component, DestroyRef, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
-import { CurrencyPipe, DecimalPipe, formatDate } from '@angular/common';
-import {
-  IonButton, IonIcon, IonItem, IonLabel, IonModal, IonDatetime, IonSegment, IonSegmentButton, IonSpinner
-} from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons';
-import { calendarOutline, chevronBack, chevronForward } from 'ionicons/icons';
+import { AfterViewInit, Component, DestroyRef, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { IonLabel, IonSegment, IonSegmentButton, IonSpinner } from '@ionic/angular/standalone';
 import { ApiService } from '../../services/api.service';
-import { localToday } from '../../utils/dates';
 import { compactRupees } from '../../utils/money';
+import { daysBetween, showDay as show, weekStart } from '../../utils/periods';
+import { PickedRange, RangePickerComponent } from '../range-picker/range-picker.component';
 
-type RangeKind = 'all' | 'week' | 'month' | 'quarter' | 'half' | 'year' | 'custom';
-type PeriodKind = 'week' | 'month' | 'quarter' | 'half' | 'year';
 type Step = 'day' | 'week' | 'month';
 
 interface TrendDay { date: string; expected: number; collected: number; }
@@ -27,45 +22,13 @@ interface TrendPoint {
   future: boolean;
 }
 
-const MONTHS_IN: Record<Exclude<PeriodKind, 'week'>, number> = { month: 1, quarter: 3, half: 6, year: 12 };
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-// Day arithmetic on 'YYYY-MM-DD' keys, in UTC so no time zone or daylight saving shifts a day
-const keyOf = (y: number, m: number, d: number) => new Date(Date.UTC(y, m, d)).toISOString().slice(0, 10);
-const partsOf = (key: string) => key.split('-').map(Number) as [number, number, number];
-const addDays = (key: string, days: number) => { const [y, m, d] = partsOf(key); return keyOf(y, m - 1, d + days); };
-const addMonths = (key: string, months: number) => { const [y, m, d] = partsOf(key); return keyOf(y, m - 1 + months, d); };
-const daysBetween = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
-// For formatDate: the key's day at local midnight, so it prints as that day in any time zone
-const localDate = (key: string) => { const [y, m, d] = partsOf(key); return new Date(y, m - 1, d); };
-const show = (key: string, format: string) => formatDate(localDate(key), format, 'en-IN');
-
-// The day a period of this kind starts, for the period holding `key` (weeks from Monday; calendar quarters,
-// halves and years)
-const periodStart = (kind: PeriodKind, key: string) => {
-  if (kind === 'week') return bucketOf(key, 'week');
-  const [y, m] = partsOf(key);
-  const size = MONTHS_IN[kind];
-  return keyOf(y, Math.floor((m - 1) / size) * size, 1);
-};
-
-// The last day of the period starting on `start`
-const periodEnd = (kind: PeriodKind, start: string) =>
-  (kind === 'week' ? addDays(start, 6) : addDays(addMonths(start, MONTHS_IN[kind]), -1));
-
-// The start of the period `delta` periods before or after the one starting on `start`
-const shiftPeriod = (kind: PeriodKind, start: string, delta: number) =>
-  (kind === 'week' ? addDays(start, 7 * delta) : addMonths(start, delta * MONTHS_IN[kind]));
-
 // Daily points while they stay readable (about a quarter), then weekly up to a year, then monthly
 const stepFor = (days: number): Step => (days <= 92 ? 'day' : days <= 366 ? 'week' : 'month');
 
 const bucketOf = (key: string, step: Step) => {
   if (step === 'day') return key;
   if (step === 'month') return `${key.slice(0, 7)}-01`;
-  // Weeks run Monday to Sunday
-  const weekday = (new Date(`${key}T00:00:00Z`).getUTCDay() + 6) % 7;
-  return addDays(key, -weekday);
+  return weekStart(key);
 };
 
 // A round top for the y-axis, close above the highest point, whose half is round too (₹8k, ₹4k)
@@ -81,29 +44,17 @@ const PAD = { top: 14, right: 10, bottom: 24, left: 46 };
   selector: 'app-collection-trend',
   templateUrl: './collection-trend.component.html',
   styleUrls: ['./collection-trend.component.scss'],
-  imports: [CurrencyPipe, DecimalPipe, IonButton, IonIcon, IonItem, IonLabel, IonModal, IonDatetime, IonSegment, IonSegmentButton, IonSpinner],
+  imports: [CurrencyPipe, DecimalPipe, IonLabel, IonSegment, IonSegmentButton, IonSpinner, RangePickerComponent],
 })
-export class CollectionTrendComponent implements OnInit, AfterViewInit {
+export class CollectionTrendComponent implements AfterViewInit {
   private api = inject(ApiService);
   private destroyRef = inject(DestroyRef);
   private measure = viewChild.required<ElementRef<HTMLElement>>('measure');
 
-  readonly ranges: { kind: RangeKind; label: string }[] = [
-    { kind: 'all', label: 'All time' },
-    { kind: 'week', label: 'Week' },
-    { kind: 'month', label: 'Month' },
-    { kind: 'quarter', label: 'Quarter' },
-    { kind: 'half', label: 'Half year' },
-    { kind: 'year', label: 'Year' },
-    { kind: 'custom', label: 'Custom' },
-  ];
   readonly chartHeight = CHART_HEIGHT;
 
-  kind = signal<RangeKind>('month');
-  // First day of the week, month, quarter, half year or year on show
-  private anchor = signal(periodStart('month', localToday()));
-  customFrom = signal(addDays(localToday(), -29));
-  customTo = signal(localToday());
+  // The range picked, set by the range picker (which starts on this month and reports it straight away)
+  range = signal<PickedRange | null>(null);
 
   data = signal<TrendData | null>(null);
   loading = signal(false);
@@ -113,28 +64,6 @@ export class CollectionTrendComponent implements OnInit, AfterViewInit {
   active = signal<number | null>(null);
   private width = signal(0);
   private requestId = 0;
-
-  range = computed<{ from?: string; to?: string }>(() => {
-    const kind = this.kind();
-    if (kind === 'all') return {};
-    if (kind === 'custom') return { from: this.customFrom(), to: this.customTo() };
-    const from = this.anchor();
-    return { from, to: periodEnd(kind, from) };
-  });
-
-  periodLabel = computed(() => {
-    const kind = this.kind();
-    const { from, to } = this.range();
-    if (!from || !to) return '';
-    const [y, m] = partsOf(from);
-    const months = `${MONTH_NAMES[m - 1]}–${MONTH_NAMES[partsOf(to)[1] - 1]}`;
-    // A week across New Year shows both years
-    if (kind === 'week') return `${show(from, y === partsOf(to)[0] ? 'd MMM' : 'd MMM y')} – ${show(to, 'd MMM y')}`;
-    if (kind === 'month') return show(from, 'MMMM y');
-    if (kind === 'quarter') return `Q${Math.floor((m - 1) / 3) + 1} ${y} · ${months}`;
-    if (kind === 'half') return `H${m <= 6 ? 1 : 2} ${y} · ${months}`;
-    return String(y);
-  });
 
   step = computed<Step>(() => {
     const d = this.data();
@@ -231,14 +160,6 @@ export class CollectionTrendComponent implements OnInit, AfterViewInit {
   /** Rows for the table view: the points where anything was due or came in */
   rows = computed(() => this.points().filter((p) => p.expected > 0 || p.collected > 0));
 
-  constructor() {
-    addIcons({ 'chevron-back': chevronBack, 'chevron-forward': chevronForward, 'calendar-outline': calendarOutline });
-  }
-
-  ngOnInit() {
-    this.load();
-  }
-
   ngAfterViewInit() {
     const element = this.measure().nativeElement;
     const observer = new ResizeObserver(() => this.width.set(element.clientWidth));
@@ -246,8 +167,15 @@ export class CollectionTrendComponent implements OnInit, AfterViewInit {
     this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
+  onRange(range: PickedRange) {
+    this.range.set(range);
+    this.load();
+  }
+
   load() {
-    const { from, to } = this.range();
+    const range = this.range();
+    if (!range) return;
+    const { from, to } = range;
     // Only the latest request draws, however the responses arrive
     const id = ++this.requestId;
     this.loading.set(true);
@@ -265,35 +193,6 @@ export class CollectionTrendComponent implements OnInit, AfterViewInit {
         this.loading.set(false);
       },
     });
-  }
-
-  setKind(kind: RangeKind) {
-    if (!kind || kind === this.kind()) return;
-    this.kind.set(kind);
-    // Week, month, quarter, half year and year open on the one holding today
-    if (kind !== 'all' && kind !== 'custom') this.anchor.set(periodStart(kind, localToday()));
-    this.load();
-  }
-
-  shift(delta: number) {
-    this.anchor.set(shiftPeriod(this.kind() as PeriodKind, this.anchor(), delta));
-    this.load();
-  }
-
-  setCustom(edge: 'from' | 'to', value: string | string[] | null | undefined) {
-    if (typeof value !== 'string') return;
-    const day = value.slice(0, 10);
-    if (edge === 'from') this.customFrom.set(day); else this.customTo.set(day);
-    // Keep the range the right way round
-    if (this.customFrom() > this.customTo()) {
-      if (edge === 'from') this.customTo.set(day); else this.customFrom.set(day);
-    }
-    this.load();
-  }
-
-  allTimeLabel(): string {
-    const d = this.data();
-    return d && this.kind() === 'all' ? `Since ${show(d.from, 'd MMM y')}` : 'All time';
   }
 
   showDay(key: string, format = 'd MMM y'): string {

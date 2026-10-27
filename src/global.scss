@@ -559,6 +559,13 @@ ion-modal.edit-loan-dialog {
 }
 
 /* Calendar card opened by a date field */
+/* The range picker's sheet (collections chart, business score): as tall as its choices, rounded at the top */
+ion-modal.range-sheet {
+  --height: auto;
+  --border-radius: 22px;
+  --backdrop-opacity: var(--ion-backdrop-opacity, 0.32) !important;
+}
+
 ion-modal.date-dialog {
   --width: fit-content;
   --height: fit-content;
