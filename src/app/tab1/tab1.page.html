@@ -2,6 +2,17 @@
   <ion-toolbar>
     <ion-title>Command center</ion-title>
     <ion-buttons slot="end">
+      <!-- The business score: its own page, worked out only when opened. Its icon is a small gauge in the score's
+           own colours (red, amber, green), drawn here rather than fetched, so the dashboard never asks for the score -->
+      <ion-button routerLink="/score" aria-label="Business score">
+        <svg slot="icon-only" class="score-gauge" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="g-low" d="M4.21 18.75A9 9 0 0 1 5.64 7.89" />
+          <path class="g-mid" d="M6.58 7.06A9 9 0 0 1 17.42 7.06" />
+          <path class="g-high" d="M18.36 7.89A9 9 0 0 1 19.79 18.75" />
+          <path class="g-needle" d="M12 14.25L17.2 11.25" />
+          <circle class="g-hub" cx="12" cy="14.25" r="2" />
+        </svg>
+      </ion-button>
       <ion-button routerLink="/settings" aria-label="Settings">
         <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
       </ion-button>

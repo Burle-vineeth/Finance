@@ -12,6 +12,12 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    // The business score, opened from the dashboard
+    path: 'score',
+    loadComponent: () => import('./score/score.page').then(m => m.ScorePage),
+    canActivate: [roleGuard('ADMIN')]
+  },
+  {
     path: 'staff',
     loadChildren: () => import('./staff/staff.routes').then((m) => m.routes),
     canActivate: [roleGuard('STAFF')]
