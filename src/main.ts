@@ -9,9 +9,13 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './app/interceptors/auth.interceptor';
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
+import { followDarkReader } from './app/utils/dark-reader';
 
 // Amounts are shown with Indian digit grouping (₹3,79,550), the same as the amount inputs
 registerLocaleData(localeEnIn);
+
+// With the Dark Reader extension on, show the app's own dark theme instead of Dark Reader's guessed colours
+followDarkReader();
 
 bootstrapApplication(AppComponent, {
   providers: [

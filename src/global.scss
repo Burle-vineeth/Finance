@@ -32,8 +32,10 @@
  * https://ionicframework.com/docs/theming/dark-mode
  */
 
+/* Dark when the system is dark, and when the app turns itself dark with .ion-palette-dark on <html>
+   (it does when Dark Reader is darkening the page, see utils/dark-reader.ts) */
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+@import "@ionic/angular/css/palettes/dark.class.css";
 @import '@ionic/angular/css/palettes/dark.system.css';
 
 /* Spinner shown inside a button while its request is running */
@@ -382,13 +384,21 @@ ion-list.plain-list {
 .av-4 { --av-fg: #be185d; --av-bg: rgba(219, 39, 119, 0.12); }
 .av-5 { --av-fg: #0f766e; --av-bg: rgba(20, 184, 166, 0.14); }
 
-@media (prefers-color-scheme: dark) {
+@mixin avatar-dark {
   .av-0 { --av-fg: #8fb0ff; }
   .av-1 { --av-fg: #c4b0ff; }
   .av-2 { --av-fg: #6ee79a; }
   .av-3 { --av-fg: #fcd060; }
   .av-4 { --av-fg: #f9a8d4; }
   .av-5 { --av-fg: #5eead4; }
+}
+
+@media (prefers-color-scheme: dark) {
+  @include avatar-dark;
+}
+
+.ion-palette-dark {
+  @include avatar-dark;
 }
 
 /* Small status pills */
