@@ -71,16 +71,17 @@
   --app-text-3: #8a93a3;
   --app-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
 
-  /** Money in / money out and status text (darker than the button colours so small text stays readable) **/
-  --app-pos: #15803d;
-  --app-neg: #dc2626;
-  --app-warn: #b45309;
-  --app-info: #2563eb;
+  /** Money in / money out and status text (darker than the button colours so small text stays readable, also on
+      the pale tint of its own colour that chips and avatars use) **/
+  --app-pos: #14793a;
+  --app-neg: #ca2121;
+  --app-warn: #ad5009;
+  --app-info: #1c5cea;
   --app-violet: #7c3aed;
 
   /** Hero card **/
   --app-hero-from: #1e3a8a;
-  --app-hero-to: #2563eb;
+  --app-hero-to: #1f52cc;
 }
 
 /* The dark palette, used in two cases (Ionic's own dark palettes follow the same two, see global.scss): */
